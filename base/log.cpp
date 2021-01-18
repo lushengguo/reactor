@@ -1,48 +1,41 @@
-#include "log.hpp"
+#include "base/log.hpp"
 #include <dirent.h>
 #include <iostream>
-#include <string.h>
 #include <vector>
 
 using namespace reactor;
 
 Logger *Logger::logger = nullptr;
 
+static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 Logger &Logger::unique_logger()
 {
+  pthread_mutex_lock(&init_mutex);
   if (!logger)
+  {
+    std::cout << "call create" << std::endl;
     logger = new Logger();
+    logger->reopen_fstream();
+  }
+  pthread_mutex_unlock(&init_mutex);
   return *logger;
 }
 
 void Logger::reopen_fstream()
 {
-  std::string mkparent_cmd = "mkdir -p " + dirpath_;
-  system(mkparent_cmd.c_str());
-  assert(!ofstream_.is_open());
-  ofstream_.open(dirpath_ + "/" + basename_);
-  assert(ofstream_.is_open());
-}
-
-std::string Logger::log_level_to_string(LoggerLevel level)
-{
-  switch (level)
+  if (access(dirpath_.c_str(), F_OK) != 0)
   {
-  case kTrace:
-    return "[trace]";
-  case kDebug:
-    return "[debug]";
-  case kInfo:
-    return "[info ]";
-  case kWarn:
-    return "[warn ]";
-  case kError:
-    return "[errro]";
-  case kFatal:
-    return "[fatal]";
-  default:
-    return "[invalid level]";
+    std::string mkparent_cmd = "mkdir -p " + dirpath_;
+    system(mkparent_cmd.c_str());
   }
+
+  if (ofstream_.is_open())
+    ofstream_.close();
+  assert(!ofstream_.is_open());
+
+  ofstream_.open(filepath());
+  assert(ofstream_.is_open());
 }
 
 void Logger::save(const std::string &content)
@@ -56,8 +49,10 @@ void Logger::add(LoggerLevel level, const std::string &content, Filename filenam
                  int line)
 {
   MutexLockGuard lock(mutex_);
-  save(Timer::readable_time() + log_level_to_string(level) + content + " " +
-       filename.str() + "-" + std::to_string(line));
+  std::string    full_content = Timer::readable_time() + log_level_to_string(level) +
+                             content + " " + filename.str() + ":" + std::to_string(line);
+  std::cout << full_content << std::endl;
+  save(full_content.append("\n"));
   checkroll();
 }
 
@@ -65,36 +60,35 @@ void Logger::checkroll()
 {
   if (curr_size() >= max_file_size_)
   {
-    ofstream_.close();
-
     // roll时将log.txt改为log.txt_${timestamp}
     std::string newpath = filepath() + "_" + std::to_string(time(NULL));
     if (rename(filepath().c_str(), newpath.c_str()) != 0)
     {
-      fprintf(stderr, "rename logfile failed", strerror(errno));
+      fprintf(stderr, "rename logfile failed - %s", strerror(errno));
       return;
     }
 
     reopen_fstream();
     remove_rollout();
+    size_ = 0;
   }
 }
 
 void Logger::remove_rollout() const
 {
-  FileMap fmp = roll_files();
-  if (fmp.size() < max_roll_)
+  FileMap fmp       = roll_files();
+  size_t  curr_roll = fmp.size();
+  if (curr_roll < max_roll_)
     return;
 
   // map对时间戳排序，越早的日志文件排在越前面
-  for (FileMap::const_iterator iter = fmp.begin(); iter != fmp.end(); ++iter)
+  for (auto iter : fmp)
   {
-    if (remove(iter->second.c_str()) != 0)
-      std::cerr << "remove file failed ? " << iter->second << std::endl;
-    else
-      fmp.erase(iter);
+    if (remove(iter.second.c_str()) != 0)
+      std::cerr << "remove file failed ? " << iter.second << std::endl;
 
-    if (fmp.size() == max_roll_)
+    std::cout << "curr roll" << curr_roll << std::endl;
+    if ((--curr_roll) <= max_roll_)
       break;
   }
 }
@@ -149,7 +143,11 @@ bool Logger::set_storge_dir(std::string dirpath)
   return true;
 }
 
-bool Logger::set_max_roll(size_t max_roll) { max_roll_ = max_roll; }
+bool Logger::set_max_roll(size_t max_roll)
+{
+  max_roll_ = max_roll;
+  return true;
+}
 
 bool Logger::set_max_file_size(size_t size)
 {
@@ -159,4 +157,25 @@ bool Logger::set_max_file_size(size_t size)
     return true;
   }
   return false;
+}
+
+std::string Logger::log_level_to_string(LoggerLevel level)
+{
+  switch (level)
+  {
+  case kTrace:
+    return "[trace]";
+  case kDebug:
+    return "[debug]";
+  case kInfo:
+    return "[info]";
+  case kWarn:
+    return "[warn]";
+  case kError:
+    return "[errro]";
+  case kFatal:
+    return "[fatal]";
+  default:
+    return "[invalid level]";
+  }
 }

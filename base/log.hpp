@@ -1,6 +1,7 @@
 #pragma once
-#include "mutex.hpp"
-#include "timer.hpp"
+#include "base/mutex.hpp"
+#include "base/noncopyable.hpp"
+#include "base/timer.hpp"
 #include <fstream>
 #include <map>
 #include <stdarg.h>
@@ -24,7 +25,7 @@ private:
   std::string filename_;
 };
 
-class Logger
+class Logger : public noncopyable
 {
 public:
   enum LoggerLevel
@@ -45,8 +46,13 @@ public:
 
 private:
   Logger(size_t max_roll = 5, size_t max_file_size = 2 * 1024 * 1024,
-         std::string dirpath_ = "./log")
-    : max_roll_(max_roll), max_file_size_(max_file_size), mutex_(new Mutex()){};
+         std::string dirpath = "./log")
+    : max_roll_(max_roll), max_file_size_(max_file_size), mutex_(new Mutex()),
+      dirpath_(dirpath)
+  {
+    size_     = 0;
+    basename_ = "log.txt";
+  }
 
 private:
   typedef std::map<Timestamp, std::string> FileMap;
@@ -73,13 +79,13 @@ private:
   size_t        max_roll_;
   size_t        max_file_size_;
   std::string   basename_;
-  std::string   dirpath_;
   Mutex *       mutex_;
+  std::string   dirpath_;
 
   static Logger *logger;
 };
 
-inline std::string var_list_to_string(char *format, ...)
+inline std::string var_list_to_string(const char *format, ...)
 {
   char    buf[4096];
   va_list list;

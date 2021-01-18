@@ -1,10 +1,10 @@
 
-#include "log.hpp"
+#include "base/log.hpp"
 #include <pthread.h>
 
 void *create_log(void *arg)
 {
-  int i = 10000;
+  int i = 1000000;
   while (i--)
   {
     if (i % 3 == 0)
@@ -14,6 +14,8 @@ void *create_log(void *arg)
     else if (i % 7 == 0)
       LOG_TRACE("log----");
   }
+
+  return NULL;
 }
 
 int main()

@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
-project (reactor)
+project(reactor)
 
-find_package(Threads)
-add_library(log_base log.cpp)
-add_library(log::library ALIAS log_base)
+set(CMAKE_CXX_FLAGS
+    " -std=c++14 -g -Wall -Wextra -Werror -Wno-unused-parameter  -Wshadow ")
+
 include_directories(${PROJECT_SOURCE_DIR})
 
-enable_testing()
-add_subdirectory(test)
+add_subdirectory(base)

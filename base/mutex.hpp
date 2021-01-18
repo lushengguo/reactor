@@ -24,6 +24,7 @@ private:
   pthread_mutex_t mutex_;
 };
 
+// auto unlock while leave {}
 class MutexLockGuard
 {
 public:
