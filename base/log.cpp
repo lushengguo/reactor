@@ -1,181 +1,172 @@
-#include "base/log.hpp"
-#include <dirent.h>
+#include "log.h"
+
+#include "tools.h"
+#include <algorithm>
+#include <fcntl.h>
+#include <fstream>
+#include <functional>
 #include <iostream>
-#include <vector>
-
-using namespace reactor;
-
-Logger *Logger::logger = nullptr;
-
-static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-Logger &Logger::unique_logger()
+#include <libgen.h>
+#include <map>
+#include <sstream>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <termios.h>
+#include <unistd.h>
+#define KB (1024)
+#define MB (1024 * KB)
+namespace reactor
 {
-  pthread_mutex_lock(&init_mutex);
-  if (!logger)
-  {
-    std::cout << "call create" << std::endl;
-    logger = new Logger();
-    logger->reopen_fstream();
-  }
-  pthread_mutex_unlock(&init_mutex);
-  return *logger;
+Logger::Logger()
+{
+    fd_           = -1;
+    enable_print_ = true;
+    max_roll_     = 10;
+    roll_size_    = 100 * KB;
+    dirname_      = "./log";
+    basename_     = "log.txt";
+    filename_     = dirname_ + "/" + basename_;
+    set_log_directory(dirname_.c_str());
+    strip_path_ = dirname_ + "/striplog";
 }
 
-void Logger::reopen_fstream()
+Logger &Logger::get()
 {
-  if (access(dirpath_.c_str(), F_OK) != 0)
-  {
-    std::string mkparent_cmd = "mkdir -p " + dirpath_;
-    system(mkparent_cmd.c_str());
-  }
-
-  if (ofstream_.is_open())
-    ofstream_.close();
-  assert(!ofstream_.is_open());
-
-  ofstream_.open(filepath());
-  assert(ofstream_.is_open());
+    static Logger logger;
+    return logger;
 }
 
-void Logger::save(const std::string &content)
+Logger::~Logger()
 {
-  assert(ofstream_.is_open());
-  ofstream_ << content;
-  size_ += content.size();
+    if (fd_ != -1)
+        close(fd_);
 }
 
-void Logger::add(LoggerLevel level, const std::string &content, Filename filename,
-                 int line)
-{
-  MutexLockGuard lock(mutex_);
-  std::string    full_content = Timer::readable_time() + log_level_to_string(level) +
-                             content + " " + filename.str() + ":" + std::to_string(line);
-  std::cout << full_content << std::endl;
-  save(full_content.append("\n"));
-  checkroll();
-}
+void Logger::set_max_roll(size_t roll) { max_roll_ = roll; }
 
-void Logger::checkroll()
+void Logger::set_log_directory(const char *dir)
 {
-  if (curr_size() >= max_file_size_)
-  {
-    // roll时将log.txt改为log.txt_${timestamp}
-    std::string newpath = filepath() + "_" + std::to_string(time(NULL));
-    if (rename(filepath().c_str(), newpath.c_str()) != 0)
+    if (!dir && dir[0] != '\0')
+        return;
+
+    dirname_  = dir;
+    filename_ = dirname_ + "/" + basename_;
+    recursion_create_dir(dirname_.c_str());
+
+    int fd = open(filename_.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC | O_APPEND, DEFFILEMODE);
+    if (fd < 0)
     {
-      fprintf(stderr, "rename logfile failed - %s", strerror(errno));
-      return;
+        perror("open log file failed");
+        return;
     }
 
-    reopen_fstream();
-    remove_rollout();
-    size_ = 0;
-  }
-}
-
-void Logger::remove_rollout() const
-{
-  FileMap fmp       = roll_files();
-  size_t  curr_roll = fmp.size();
-  if (curr_roll < max_roll_)
-    return;
-
-  // map对时间戳排序，越早的日志文件排在越前面
-  for (auto iter : fmp)
-  {
-    if (remove(iter.second.c_str()) != 0)
-      std::cerr << "remove file failed ? " << iter.second << std::endl;
-
-    std::cout << "curr roll" << curr_roll << std::endl;
-    if ((--curr_roll) <= max_roll_)
-      break;
-  }
-}
-
-Logger::FileMap Logger::roll_files() const
-{
-  auto get_files_under_dir = [](std::string dirpath) -> std::vector<std::string> {
-    std::vector<std::string> files;
-    DIR *                    dir;
-    struct dirent *          ent;
-    if ((dir = opendir(dirpath.c_str())) != NULL)
+    if (fd_ == -1)
     {
-      while ((ent = readdir(dir)) != NULL)
-      {
-        files.push_back(ent->d_name);
-      }
-      closedir(dir);
+        fd_ = fd;
+    }
+    else
+    {
+        dup2(fd, fd_);
+    }
+}
+
+void Logger::append(std::string header, std::string content, Timestamp t)
+{
+    MutexLockGuard lock(mutex_);
+    std::string    now;
+    t == 0 ? now = fmt_timestamp(time(nullptr)) : now = fmt_timestamp(t);
+    std::string s(now + +" |" + header + "| " + content + "\n");
+    print(s);
+    // Trace不保存
+    if (strcasestr(header.c_str(), "trace") == nullptr)
+    {
+        save(s);
+    }
+}
+
+void Logger::print(std::string content) const
+{
+    if (enable_print_)
+    {
+        std::cout << content << std::flush;
+    }
+}
+
+void Logger::save(std::string content)
+{
+    if (fd_ == -1)
+        return;
+
+    write(fd_, content.c_str(), content.size());
+    check_roll();
+}
+
+void Logger::check_roll()
+{
+    time_t now       = time(nullptr);
+    size_t file_size = calc_file_size(filename_.c_str());
+    tcflush(fd_, TCOFLUSH);
+
+    if (file_size > roll_size_ && max_roll_ > 0)
+    {
+        // log.txt文件改名，后面加上下划线和时间戳，新建个log.txt存日志
+        std::string newname = filename_ + "_" + std::to_string(now);
+        if (rename(filename_.c_str(), newname.c_str()) != 0)
+        {
+            fprintf(stderr,
+              "rename logfile %s -> %s failed ; msg: %s\n",
+              filename_.c_str(),
+              newname.c_str(),
+              strerror(errno));
+            return;
+        }
+
+        //重新指定fd_指向的文件
+        set_log_directory(dirname_.c_str());
+
+        //检查本地log文件是否过多，多的话删除至最多max_roll_time_个
+        remove_roll_out_files();
+    }
+}
+
+void Logger::remove_roll_out_files() const
+{
+    //删除多出的日志文件
+    FileMap rfiles = rolling_files();
+    if (rfiles.size() < max_roll_)
+        return;
+
+    // map对时间戳排序，越早的日志文件排在越前面
+    for (FileMap::const_iterator iter = rfiles.begin(); iter != rfiles.end(); ++iter)
+    {
+        if (remove(iter->second.c_str()) != 0)
+            std::cerr << "remove file error : " << iter->second << std::endl;
+        else
+            rfiles.erase(iter);
+
+        if (rfiles.size() == max_roll_)
+            break;
+    }
+}
+
+//统计log目录下所有滚动文件
+//返回值 键-滚动时间戳 值-文件绝对路径
+Logger::FileMap Logger::rolling_files() const
+{
+    FileMap   rfiles;
+    Filenames filenames = get_file_names(dirname_.c_str());
+    for (Filename &name : filenames)
+    {
+        size_t index = name.find(basename_ + "_");
+        if (index != std::string::npos)
+        {
+            time_t t = atoi(name.substr(basename_.size() + 1).c_str());
+            rfiles.insert(std::pair<time_t, Filepath>(t, dirname_ + "/" + name));
+        }
     }
 
-    return files;
-  };
-
-  typedef std::string      FileFullPath;
-  FileMap                  fmp;
-  std::vector<std::string> filenames = get_files_under_dir(dirpath_);
-  for (std::string &name : filenames)
-  {
-    size_t index = name.find(basename_ + "_");
-    if (index != std::string::npos)
-    {
-      time_t timestamp = atoi(name.substr(basename_.size() + 1).c_str());
-      fmp.insert(std::pair<time_t, FileFullPath>(timestamp, dirpath_ + "/" + name));
-    }
-  }
-
-  return fmp;
+    return rfiles;
 }
 
-bool Logger::set_storge_dir(std::string dirpath)
-{
-  dirpath_ = dirpath;
-
-  while (!dirpath_.empty() && dirpath_.rfind('/') == dirpath_.size() - 1)
-  {
-    dirpath_.pop_back();
-  }
-
-  if (dirpath.empty())
-    dirpath = ".";
-
-  reopen_fstream();
-  return true;
-}
-
-bool Logger::set_max_roll(size_t max_roll)
-{
-  max_roll_ = max_roll;
-  return true;
-}
-
-bool Logger::set_max_file_size(size_t size)
-{
-  if (size != 0)
-  {
-    max_file_size_ = size;
-    return true;
-  }
-  return false;
-}
-
-std::string Logger::log_level_to_string(LoggerLevel level)
-{
-  switch (level)
-  {
-  case kTrace:
-    return "[trace]";
-  case kDebug:
-    return "[debug]";
-  case kInfo:
-    return "[info]";
-  case kWarn:
-    return "[warn]";
-  case kError:
-    return "[errro]";
-  case kFatal:
-    return "[fatal]";
-  default:
-    return "[invalid level]";
-  }
-}
+} // namespace reactor
