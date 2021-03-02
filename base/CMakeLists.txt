@@ -1,7 +1,7 @@
-aux_source_directory(. BASE_SRCS)
-add_library(reactor_base ${BASE_SRCS})
-target_link_libraries(reactor_base pthread)
-add_library(base::library ALIAS reactor_base)
+aux_source_directory(. BASESRCS)
+add_library(base ${BASESRCS})
+add_library(base::library ALIAS base)
+target_link_libraries(base thread::library)
 
-enable_testing()
-add_subdirectory(test)
+add_subdirectory(Test)
+add_subdirectory(Thread)

@@ -1,8 +1,8 @@
+#include "base/ThreadPool.hpp"
 #include "base/log.hpp"
-#include "base/threadpoll.hpp"
 
 using namespace reactor;
-void ThreadPoll::run_in_thread()
+void ThreadPool::run_in_thread()
 {
     while (true)
     {
@@ -26,17 +26,17 @@ void ThreadPoll::run_in_thread()
         log_trace("thread id=%ld call task finish", pthread_self());
     }
 }
-bool ThreadPoll::add_task(Task &&task)
+bool ThreadPool::add_task(Task &&task)
 {
     MutexLockGuard lock(&task_queue_mutex_);
     if (tasks_.size() >= task_size_)
     {
-        log_debug("pthreadpoll task queue is full");
+        log_debug("pThreadPool task queue is full");
         return false;
     }
     else
     {
-        log_debug("add task to pthreadpoll task queue ,call later");
+        log_debug("add task to pThreadPool task queue ,call later");
         tasks_.push_back(std::move(task));
     }
 
@@ -48,27 +48,28 @@ bool ThreadPoll::add_task(Task &&task)
     return true;
 }
 
-bool ThreadPoll::add_task(Task &task)
+bool ThreadPool::add_task(Task &task)
 {
     MutexLockGuard lock(&task_queue_mutex_);
     if (tasks_.size() >= task_size_)
     {
-        log_debug("pthreadpoll task queue is full");
+        log_debug("pThreadPool task queue is full");
         return false;
     }
     else
     {
-        log_debug("add task to pthreadpoll task queue ,call later");
+        log_debug("add task to pThreadPool task queue ,call later");
         tasks_.push_back(std::move(task));
     }
     return true;
 }
 
-void ThreadPoll::start()
+void ThreadPool::start()
 {
     for (size_t i = 0; i < thread_num_; i++)
     {
-        threads_.emplace_back(new Thread(std::bind(&ThreadPoll::run_in_thread, this)));
+        threads_.emplace_back(
+          new Thread(std::bind(&ThreadPool::run_in_thread, this)));
         threads_[i]->start();
     }
     running_ = true;
