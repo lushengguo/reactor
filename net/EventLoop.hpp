@@ -4,8 +4,8 @@
 #include "base/threadpool.hpp"
 #include "base/timer.hpp"
 #include "base/timestamp.hpp"
-#include "net/Channel.hpp"
-#include "net/epoller.hpp"
+#include "net/Epoller.hpp"
+#include "net/TcpConnection.hpp"
 #include <functional>
 #include <map>
 #include <memory>
@@ -16,9 +16,12 @@ namespace reactor
 class EventLoop : private noncopyable
 {
   public:
-    typedef std::function<void()> Task;
-    typedef std::function<void()> TimerCallback;
-    typedef size_t                TimerID;
+    typedef std::function<void()>           Task;
+    typedef std::function<void()>           TimerCallback;
+    typedef size_t                          TimerID;
+    typedef std::map<int, TcpConnectionPtr> ConnectionMap;
+    typedef std::map<int, TcpServerPtr>     ServerMap;
+    typedef std::map<int, TcpClientPtr>     ClientMap;
 
     void loop();
 
@@ -33,8 +36,12 @@ class EventLoop : private noncopyable
     void update_connection(TcpConnectionPtr conn);
 
   private:
-    bool                    looping_;
     std::unique_ptr<Poller> poller_;
-    ThreadPool              pool_;
+
+    bool          looping_;
+    ThreadPool    pool_;
+    ConnectionMap connMap_;
+    ServerMap     serverMap_; // only wait for accept event
+    ClientMap     clientMap_; // only wait for connect event
 };
 } // namespace reactor

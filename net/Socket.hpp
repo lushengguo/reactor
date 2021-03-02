@@ -3,6 +3,8 @@
 #include "base/noncopyable.hpp"
 #include "net/Buffer.hpp"
 #include "net/INetAddr.hpp"
+#include <errno.h>
+#include <string.h> //strerror
 
 namespace reactor
 {
@@ -10,22 +12,21 @@ namespace reactor
 class Socket : private noncopyable
 {
   public:
-    Socket(int listen_queue_size = default_listen_queue_size_);
+    Socket(int backlog = default_backlog_);
     bool bind(const INetAddr &) const;
     bool listen() const;
     int  accept() const;
-    int  connect(const INetAddr &addr) const;
-    void set_tcp_nodelay();
-    int  read(int fd, char *buffer, size_t max);
-    int  write(int fd, char *buffer, size_t send_len);
+    int  connect(const INetAddr &) const;
+    int  read(char *buffer, size_t max);
+    int  write(char *buffer, size_t send_len);
 
-    void read_into_Buffer(int fd, Buffer &buffer);
+    void set_tcp_nodelay();
+    void set_nonblock();
 
   private:
-    constexpr static size_t read_max_once_             = 65535;
-    constexpr static int    default_listen_queue_size_ = 1024;
-    static int              listen_queue_size_;
-    int                     fd_;
+    constexpr static int default_backlog_ = 1024;
+    static int           backlog_;
+    int                  fd_;
 };
 
 } // namespace reactor

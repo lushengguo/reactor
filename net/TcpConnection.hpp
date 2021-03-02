@@ -35,28 +35,39 @@ class TcpConnection : private noncopyable,
     {
         onConnectionCallback_ = cb;
     }
+    void set_onWriteCompleteCallback(const EventCallback &cb)
+    {
+        onWriteCompleteCallback_ = cb;
+    }
+
+    int fd() const { return sock_.fd(); }
+
+    void remove_self_in_loop()
+    {
+        sock_.close();
+        loop_->update_connection(shared_from_this());
+    }
 
     size_t send(const Buffer *);
     void   shutdown_write();
 
     ConnectionState state() const { return state_; }
 
+    void set_interest_event(int event) { interest_event_ = event; }
     int  interest_event() const { return interest_event_; }
     void handle_event(int event);
 
   private:
-    //用户可能多次写
-    //如果同步进行发送就会乱序，同一时间只能有一个线程在对该描述符写
+    void enable_read();
+    void disable_read();
+    void enable_write();
+    void disable_write();
+
+    //用户可能多次写 为了避免乱序 同一时间只能有一个线程对描述符执行写操作
     bool current_thread_writing() const;
     bool try_lock_write();
     void release_lock_write();
     bool lock_write();
-    void enable_write();
-    void disable_write();
-
-    //读
-    void enable_read();
-    void disable_read();
 
     //带外数据暂时不管
 
@@ -76,13 +87,14 @@ class TcpConnection : private noncopyable,
 
     ConnectionState state_;
     EventLoop *     loop_;
-    Socket          socket_;
+    Socket          sock_;
 
     Buffer read_buffer_;
     Buffer write_buffer_;
 
     EventCallback onMessageCallback_;
     EventCallback onConnectionCallback_;
+    EventCallback onWriteCompleteCallback_;
 };
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;

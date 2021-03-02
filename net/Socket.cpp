@@ -3,18 +3,20 @@
 #include "net/Socket.hpp"
 #include <arpa/inet.h>
 #include <endian.h>
+#include <fcntl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <strings.h>
 #include <sys/socket.h>
 
 namespace reactor
 {
-Socket::Socket(int listen_queue_size)
+Socket::Socket(int backlog)
 {
-    if (listen_queue_size <= 0)
-        listen_queue_size_ = default_listen_queue_size_;
+    if (backlog <= 0)
+        backlog_ = default_backlog_;
     else
-        listen_queue_size_ = listen_queue_size;
+        backlog_ = backlog;
 
     fd_ = socket(AF_INET, SOCK_STREAM, 0);
 }
@@ -30,7 +32,7 @@ bool Socket::bind(const INetAddr &addr) const
     sockaddr_in saddr;
     bzero(&saddr, sizeof saddr);
     saddr.sin_family      = AF_INET;
-    saddr.sin_port        = htobe16(addr.port());
+    saddr.sin_port        = addr.be_port();
     saddr.sin_addr.s_addr = htobe64(INADDR_ANY);
     int ret               = ::bind(fd_, (const sockaddr *)&saddr, sizeof saddr);
     if (ret == -1)
@@ -52,7 +54,7 @@ bool Socket::listen() const
         return -1;
     }
 
-    if (::listen(fd_, listen_queue_size_) == -1)
+    if (::listen(fd_, backlog_) == -1)
     {
         log_error("listen on socket=%d failed: %s", fd_, strerror(errno));
         return false;
@@ -104,41 +106,46 @@ int Socket::connect(const INetAddr &addr) const
     return ret;
 }
 
-int Socket::read(int fd, char *buffer, size_t max)
+int Socket::read(char *buffer, size_t max) { return ::read(fd_, buffer, max); }
+
+int Socket::write(char *buffer, size_t send_len)
 {
-    int ret = ::read(fd, buffer, max);
-    if (ret < 0)
-    {
-        log_error("read from fd=%d error:%s", fd, strerror(errno));
-    }
-    return ret;
+    return ::write(fd_, buffer, send_len);
 }
 
-int Socket::write(int fd, char *buffer, size_t send_len)
+void Socket::close()
 {
-    int ret = ::write(fd, buffer, send_len);
-    if (ret < 0)
+    if (fd_ > 0)
     {
-        log_error("write to fd=%d error:%s", fd, strerror(errno));
+        int r = ::close(fd_);
+        if (r != 0)
+        {
+            log_warn("close file descriptor failed:%s", strerror(errno));
+        }
     }
-    else if (ret != send_len)
-    {
-        log_error("write to fd=%d incomplete, send %d ,expect %d",
-          fd,
-          ret,
-          send_len);
-    }
-    return ret;
+    fd_ = -1;
 }
 
-void Socket::read_into_buffer(int fd, Buffer &buffer, ErrorCode &err)
+void Socket::set_nonblock()
 {
-    char tmp[read_max_once_];
-    int  ret = read(fd, tmp, read_max_once_);
-    if (ret > 0)
-    {
-        buffer.append(tmp, ret);
-    }
+    if (fd <= 0)
+        log_error("set nonblocking error due to fd<0");
+
+    int flags = fcntl(fd_, F_GETFL, 0);
+    int r     = fcntl(fd_, F_SETFL, flags | O_NONBLOCK);
+    if (r != 0)
+        log_error("set fd nonblock error:%s", strerror(errno));
+}
+
+void Socket::set_tcp_no_delay()
+{
+    if (fd <= 0)
+        log_error("set nonblocking error due to fd<0");
+
+    int yes = 1;
+    int r = setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, (char *)&yes, sizeof yes);
+    if (r != 0)
+        log_error("set fd tcp-nodelay error:%s", strerror(errno));
 }
 
 } // namespace reactor

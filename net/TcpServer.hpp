@@ -2,13 +2,13 @@
 
 #include "base/ThreadPool.hpp"
 #include "base/noncopyable.hpp"
-#include "net/Acceptor.hpp"
 #include "net/EventLoop.hpp"
 #include "net/INetAddr.hpp"
 #include "net/Socket.hpp"
-#include "net/TcpConnection.hpp"
 #include <functional>
 #include <memory>
+#include <string>
+#include <string_view>
 
 namespace reactor
 {
@@ -16,13 +16,14 @@ class TcpServer : private noncopyable
 {
   public:
     typedef std::function<void()> EventCallback;
-    TcpServer(EventLoop *loop, const INetAddr &addr);
+    TcpServer(
+      EventLoop *loop, const INetAddr &addr, std::string_view server_name)
+      : endpoint_(addr), name_(server_name), started_(false), ploop_(loop)
+    {}
 
-    int  set_thread_num(size_t n);
+    ~TcpServer();
+
     void start();
-    void wait_connection();
-    void new_connection(int fd);
-    void refuse_connection() const;
 
     void set_onConnectionCallback(const EventCallback &cb)
     {
@@ -35,12 +36,16 @@ class TcpServer : private noncopyable
     }
 
   private:
-    Socket * sock_;
-    INetAddr addr_;
+    void listen();
+    void accept();
 
-    std::unique_ptr<ThreadPool> ThreadPool_;
-    std::shared_ptr<EventLoop>  loop_;
+    TcpConnectionPtr self_;
 
+    INetAddr      endpoint_;
+    std::string   name_;
+    bool          started_;
+    EventLoop *   ploop_;
+    Socket        sock_;
     EventCallback onMessageCallback_;
     EventCallback onConnectionCallback_;
     EventCallback onWriteCompleteCallback_;
