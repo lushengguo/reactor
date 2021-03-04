@@ -1,8 +1,10 @@
 #pragma once
+#ifndef REACTOR_LOG_HPP
+#define REACTOR_LOG_HPP
 
-#include "Mutex.h"
-#include "timestamp.h"
-#include "tools.h"
+#include "base/mixed.hpp"
+#include "base/mutex.hpp"
+#include "base/timestamp.hpp"
 #include <map>
 #include <stdarg.h>
 #include <string.h>
@@ -24,7 +26,7 @@ class Logger
     void           set_maxsize_per_file(size_t size) { roll_size_ = size; }
     void           set_max_roll(size_t roll);
     void           set_print_option(bool en) { enable_print_ = en; }
-    void           append(std::string header, std::string content, Timestamp t = 0);
+    void append(std::string header, std::string content, Timestamp t = 0);
 
   private:
     Logger();
@@ -58,35 +60,57 @@ inline std::string va_list_to_string(const char *format, ...)
 }
 
 inline void disable_log_print() { Logger::get().set_print_option(false); }
-inline void set_log_directory(const char *path) { Logger::get().set_log_directory(path); }
-inline void set_roll_size(size_t size) { Logger::get().set_maxsize_per_file(size); }
+inline void set_log_directory(const char *path)
+{
+    Logger::get().set_log_directory(path);
+}
+inline void set_roll_size(size_t size)
+{
+    Logger::get().set_maxsize_per_file(size);
+}
 inline void set_max_roll_time(size_t size) { Logger::get().set_max_roll(size); }
 } // namespace reactor
-} // namespace xair
 
-#define log_trace(...)                                                                             \
-    xair::iot::Logger::get().append(" TRACE ",                                                     \
-      xair::iot::va_list_to_string(__VA_ARGS__) + "  " + xair::iot::Basename(__FILE__) + "-" +     \
-        std::to_string(__LINE__))
-#define log_debug(...)                                                                             \
-    xair::iot::Logger::get().append(" DEBUG ",                                                     \
-      xair::iot::va_list_to_string(__VA_ARGS__) + "  " + xair::iot::Basename(__FILE__) + "-" +     \
-        std::to_string(__LINE__))
-#define log_warn(...)                                                                              \
-    xair::iot::Logger::get().append(" WARN  ",                                                     \
-      xair::iot::va_list_to_string(__VA_ARGS__) + "  " + xair::iot::Basename(__FILE__) + "-" +     \
-        std::to_string(__LINE__))
-#define log_info(...)                                                                              \
-    xair::iot::Logger::get().append(" INFO  ",                                                     \
-      xair::iot::va_list_to_string(__VA_ARGS__) + "  " + xair::iot::Basename(__FILE__) + "-" +     \
-        std::to_string(__LINE__))
-#define log_error(...)                                                                             \
-    xair::iot::Logger::get().append(" ERROR ",                                                     \
-      xair::iot::va_list_to_string(__VA_ARGS__) + "  " + xair::iot::Basename(__FILE__) + "-" +     \
-        std::to_string(__LINE__))
-#define log_fatal(...)                                                                             \
-    xair::iot::Logger::get().append(" FATAL ",                                                     \
-      xair::iot::va_list_to_string(__VA_ARGS__) + "  " + xair::iot::Basename(__FILE__) + "-" +     \
-        std::to_string(__LINE__))
-
+#define log_trace(...)                                                         \
+    reactor::Logger::get().append(" TRACE ",                                   \
+      reactor::va_list_to_string(__VA_ARGS__)                                  \
+        .append(" ")                                                           \
+        .append(reactor::Basename(__FILE__))                                   \
+        .append("-")                                                           \
+        .append(std::to_string(__LINE__)))
+#define log_debug(...)                                                         \
+    reactor::Logger::get().append(" DEBUG ",                                   \
+      reactor::va_list_to_string(__VA_ARGS__)                                  \
+        .append(" ")                                                           \
+        .append(reactor::Basename(__FILE__))                                   \
+        .append("-")                                                           \
+        .append(std::to_string(__LINE__)))
+#define log_warn(...)                                                          \
+    reactor::Logger::get().append(" WARN  ",                                   \
+      reactor::va_list_to_string(__VA_ARGS__)                                  \
+        .append(" ")                                                           \
+        .append(reactor::Basename(__FILE__))                                   \
+        .append("-")                                                           \
+        .append(std::to_string(__LINE__)))
+#define log_info(...)                                                          \
+    reactor::Logger::get().append(" INFO  ",                                   \
+      reactor::va_list_to_string(__VA_ARGS__)                                  \
+        .append(" ")                                                           \
+        .append(reactor::Basename(__FILE__))                                   \
+        .append("-")                                                           \
+        .append(std::to_string(__LINE__)))
+#define log_error(...)                                                         \
+    reactor::Logger::get().append(" ERROR ",                                   \
+      reactor::va_list_to_string(__VA_ARGS__)                                  \
+        .append(" ")                                                           \
+        .append(reactor::Basename(__FILE__))                                   \
+        .append("-")                                                           \
+        .append(std::to_string(__LINE__)))
+#define log_fatal(...)                                                         \
+    reactor::Logger::get().append(" FATAL ",                                   \
+      reactor::va_list_to_string(__VA_ARGS__)                                  \
+        .append(" ")                                                           \
+        .append(reactor::Basename(__FILE__))                                   \
+        .append("-")                                                           \
+        .append(std::to_string(__LINE__)))
 #endif

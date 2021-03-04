@@ -1,4 +1,4 @@
-#include "tools.hpp"
+#include "base/mixed.hpp"
 #include <dirent.h>
 #include <fcntl.h>
 #include <libgen.h>
@@ -19,7 +19,8 @@ void replace_all(std::string &str, std::string from, std::string to)
         return;
 
     size_t index;
-    while ((index = str.find(from)) != std::string::npos) { str.replace(index, from.size(), to); }
+    while ((index = str.find(from)) != std::string::npos)
+    { str.replace(index, from.size(), to); }
 }
 
 std::string fmt_timestamp(time_t t)
@@ -68,14 +69,18 @@ int read_file(const char *path, std::string &str)
 {
     if (access(path, F_OK) != 0)
     {
-        fprintf(stderr, "can not open file while reading into string:%s\n", path);
+        fprintf(stderr,
+          "can not open file while reading into string:%s\n",
+          path);
         return -1;
     }
 
     str = "";
     std::ifstream ifile(path);
     if (ifile.fail())
-        fprintf(stderr, "open %s file failed while reading into string\n", path);
+        fprintf(stderr,
+          "open %s file failed while reading into string\n",
+          path);
 
     char ch;
     while (ifile.get(ch)) { str.append(1, ch); }
@@ -122,7 +127,8 @@ std::vector<std::string> get_file_names(const char *dir_path)
     return files;
 }
 
-bool retry_n_times(size_t n, std::function<bool()> func, const char *error_message)
+bool retry_n_times(
+  size_t n, std::function<bool()> func, const char *error_message)
 {
     while (n--)
     {

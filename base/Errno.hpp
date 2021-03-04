@@ -1,4 +1,6 @@
 #pragma once
+#ifndef REACTOR_ERRNO_HPP
+#define REACTOR_ERRNO_HPP
 
 #include <errno.h>
 #include <string.h>
@@ -9,7 +11,7 @@ namespace reactor
 class ErrorCode
 {
   public:
-    ErrorCode() : err_(0) {}
+    ErrorCode() : err_(errno) {}
     operator bool() { return err_ == 0; }
 
     std::string str() const { return strerror(err_); }
@@ -20,3 +22,4 @@ class ErrorCode
 };
 
 } // namespace reactor
+#endif

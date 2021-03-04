@@ -1,4 +1,6 @@
 #include "net/Buffer.hpp"
+#include <stdlib.h>
+#include <string.h>
 
 namespace reactor
 {
@@ -23,13 +25,18 @@ std::string_view Buffer::read(size_t n) const
 }
 
 template <typename Tp>
-void Buffer::append<Tp>(Tp *p, size_t n)
+void Buffer::append(Tp *p, size_t n)
 {
     make_space_for_write(n * sizeof(Tp));
     memcpy(buffer_.data() + windex_, p, n * sizeof(Tp));
 }
 
-void Buffer::append(std::string_view s) { append(s.c_str(), s.size()); }
+void Buffer::append(std::string_view s) { append(s.data(), s.size()); }
+
+void Buffer::append(const Buffer &buffer)
+{
+    append(buffer.read(readable_bytes()));
+}
 
 void Buffer::swap(Buffer &rhs)
 {

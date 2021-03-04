@@ -1,5 +1,6 @@
-#ifndef XAIR_KIT_HPP
-#define XAIR_KIT_HPP
+#pragma once
+#ifndef REACTOR_MIXED_HPP
+#define REACTOR_MIXED_HPP
 
 #include <fcntl.h>
 #include <functional>
@@ -7,10 +8,10 @@
 #include <unistd.h>
 #include <vector>
 
-#define UNUSED(expr)                                                                               \
-    do                                                                                             \
-    {                                                                                              \
-        (void)expr;                                                                                \
+#define UNUSED(expr)                                                           \
+    do                                                                         \
+    {                                                                          \
+        (void)expr;                                                            \
     } while (0)
 
 namespace reactor
@@ -25,7 +26,8 @@ std::vector<std::string> get_file_names(const char *dir_path);
 int                      read_file(const char *path, std::string &str);
 void                     recursion_create_dir(const char *path);
 
-bool        retry_n_times(size_t n, std::function<bool()> func, const char *error_message);
+bool retry_n_times(
+  size_t n, std::function<bool()> func, const char *error_message);
 std::string Basename(std::string);
 } // namespace reactor
 

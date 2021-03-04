@@ -1,5 +1,5 @@
-#include "base/ThreadPool.hpp"
 #include "base/log.hpp"
+#include "base/threadpool.hpp"
 
 using namespace reactor;
 void ThreadPool::run_in_thread()
@@ -28,7 +28,7 @@ void ThreadPool::run_in_thread()
 }
 bool ThreadPool::add_task(Task &&task)
 {
-    MutexLockGuard lock(&task_queue_mutex_);
+    MutexLockGuard lock(task_queue_mutex_);
     if (tasks_.size() >= task_size_)
     {
         log_debug("pThreadPool task queue is full");
@@ -48,9 +48,9 @@ bool ThreadPool::add_task(Task &&task)
     return true;
 }
 
-bool ThreadPool::add_task(Task &task)
+bool ThreadPool::add_task(const Task &task)
 {
-    MutexLockGuard lock(&task_queue_mutex_);
+    MutexLockGuard lock(task_queue_mutex_);
     if (tasks_.size() >= task_size_)
     {
         log_debug("pThreadPool task queue is full");
@@ -59,8 +59,14 @@ bool ThreadPool::add_task(Task &task)
     else
     {
         log_debug("add task to pThreadPool task queue ,call later");
-        tasks_.push_back(std::move(task));
+        tasks_.emplace_back(task);
     }
+
+    if (!tasks_.empty())
+    {
+        compete_cond_.broadcast();
+    }
+
     return true;
 }
 

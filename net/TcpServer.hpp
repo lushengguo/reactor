@@ -1,7 +1,9 @@
 #pragma once
+#ifndef REACTOR_TCPSERVER_HPP
+#define REACTOR_TCPSERVER_HPP
 
-#include "base/ThreadPool.hpp"
 #include "base/noncopyable.hpp"
+#include "base/threadpool.hpp"
 #include "net/EventLoop.hpp"
 #include "net/INetAddr.hpp"
 #include "net/Socket.hpp"
@@ -15,10 +17,14 @@ namespace reactor
 class TcpServer : private noncopyable
 {
   public:
+    using MessageFunc = typename TcpConnection::MessageFunc;
     typedef std::function<void()> EventCallback;
-    TcpServer(
-      EventLoop *loop, const INetAddr &addr, std::string_view server_name)
-      : endpoint_(addr), name_(server_name), started_(false), ploop_(loop)
+
+    TcpServer(EventLoop *loop, INetAddr &&addr, std::string_view server_name)
+      : endpoint_(std::move(addr)),
+        name_(server_name),
+        started_(false),
+        ploop_(loop)
     {}
 
     ~TcpServer();
@@ -30,7 +36,7 @@ class TcpServer : private noncopyable
         onConnectionCallback_ = cb;
     }
 
-    void set_onMessageCallback(const EventCallback &cb)
+    void set_onMessageCallback(const MessageFunc &cb)
     {
         onMessageCallback_ = cb;
     }
@@ -41,13 +47,16 @@ class TcpServer : private noncopyable
 
     TcpConnectionPtr self_;
 
-    INetAddr      endpoint_;
-    std::string   name_;
-    bool          started_;
-    EventLoop *   ploop_;
-    Socket        sock_;
-    EventCallback onMessageCallback_;
+    INetAddr    endpoint_;
+    std::string name_;
+    bool        started_;
+    EventLoop * ploop_;
+    Socket      sock_;
+
+    MessageFunc   onMessageCallback_;
     EventCallback onConnectionCallback_;
     EventCallback onWriteCompleteCallback_;
 };
 } // namespace reactor
+
+#endif

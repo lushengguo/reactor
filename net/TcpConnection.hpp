@@ -1,14 +1,21 @@
 #pragma once
+#ifndef REACTOR_TCPCONNECTION_HPP
+#define REACTOR_TCPCONNECTION_HPP
 
-#include "base/Buffer.hpp"
 #include "base/mutex.hpp"
 #include "base/noncopyable.hpp"
 #include "base/timestamp.hpp"
-#include "net/Channel.hpp"
+#include "net/Socket.hpp"
 #include <functional>
-#include <memeory>
+#include <memory>
+
 namespace reactor
 {
+
+class Buffer;
+class EventLoop;
+class TcpConnection;
+typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
 // TcpServer和TcpClient共用
 // 用户只需要针对Connection做处理
 class TcpConnection : private noncopyable,
@@ -20,14 +27,17 @@ class TcpConnection : private noncopyable,
         kConnected,
         kPeerHalfClose,
         kUsHalfClose,
+        kDisConnecting,
         kDisconnected
     };
 
     typedef std::function<void()> EventCallback;
-    TcpConnection(EventLoop *loop, Socket &socket);
+    typedef std::function<void(TcpConnectionPtr, Buffer, mTimestamp)>
+      MessageFunc;
+    TcpConnection(EventLoop *, Socket &&);
     ~TcpConnection();
 
-    void set_onMessageCallback(const EventCallback &cb)
+    void set_onMessageCallback(const MessageFunc &cb)
     {
         onMessageCallback_ = cb;
     }
@@ -42,20 +52,16 @@ class TcpConnection : private noncopyable,
 
     int fd() const { return sock_.fd(); }
 
-    void remove_self_in_loop()
-    {
-        sock_.close();
-        loop_->update_connection(shared_from_this());
-    }
+    void remove_self_in_loop();
 
-    size_t send(const Buffer *);
-    void   shutdown_write();
+    void send(char *buf, size_t len);
+    void shutdown_write();
 
     ConnectionState state() const { return state_; }
 
     void set_interest_event(int event) { interest_event_ = event; }
     int  interest_event() const { return interest_event_; }
-    void handle_event(int event);
+    void handle_event(int event, mTimestamp);
 
   private:
     void enable_read();
@@ -63,25 +69,16 @@ class TcpConnection : private noncopyable,
     void enable_write();
     void disable_write();
 
-    //用户可能多次写 为了避免乱序 同一时间只能有一个线程对描述符执行写操作
-    bool current_thread_writing() const;
-    bool try_lock_write();
-    void release_lock_write();
-    bool lock_write();
-
-    //带外数据暂时不管
-
-    //异步回调
     void handle_read(mTimestamp receive_time);
     void handle_write();
     void handle_error();
-    void hanle_close();
-    void close();
+    void handle_close();
 
   private:
     int interest_event_;
 
     Mutex     wrmutex_;
+    Mutex     wbuffer_mutex_;
     bool      writing_;
     pthread_t writing_tid_;
 
@@ -92,11 +89,11 @@ class TcpConnection : private noncopyable,
     Buffer read_buffer_;
     Buffer write_buffer_;
 
-    EventCallback onMessageCallback_;
+    MessageFunc   onMessageCallback_;
     EventCallback onConnectionCallback_;
     EventCallback onWriteCompleteCallback_;
 };
 
-typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
-
 } // namespace reactor
+
+#endif

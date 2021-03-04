@@ -11,6 +11,22 @@
 
 namespace reactor
 {
+
+Socket::Socket(Socket &&rhs)
+{
+    if (this != &rhs)
+    {
+        close();
+        std::swap(fd_, rhs.fd_);
+    }
+}
+
+Socket::Socket(int fd, INetAddr &&addr)
+  : self_endpoint_(std::move(addr)), backlog_(default_backlog_), fd_(fd)
+{}
+
+Socket::~Socket() { close(); }
+
 Socket::Socket(int backlog)
 {
     if (backlog <= 0)
@@ -21,24 +37,25 @@ Socket::Socket(int backlog)
     fd_ = socket(AF_INET, SOCK_STREAM, 0);
 }
 
-bool Socket::bind(const INetAddr &addr) const
+bool Socket::bind(const INetAddr &addr)
 {
+    self_endpoint_ = addr;
     if (fd_ <= 0)
     {
-        log_error("bind port=%d failed: bad socket", addr.port());
+        log_error("bind port=%d failed: bad socket", self_endpoint_.hostport());
         return false;
     }
 
-    sockaddr_in saddr;
-    bzero(&saddr, sizeof saddr);
-    saddr.sin_family      = AF_INET;
-    saddr.sin_port        = addr.be_port();
-    saddr.sin_addr.s_addr = htobe64(INADDR_ANY);
-    int ret               = ::bind(fd_, (const sockaddr *)&saddr, sizeof saddr);
-    if (ret == -1)
+    sockaddr_in paddr;
+    bzero(&paddr, sizeof paddr);
+    paddr.sin_family      = AF_INET;
+    paddr.sin_port        = addr.netport();
+    paddr.sin_addr.s_addr = htobe64(INADDR_ANY);
+    int r                 = ::bind(fd_, (const sockaddr *)&paddr, sizeof paddr);
+    if (r == -1)
     {
         log_error("bind port=%d on socket=%d failed: %s",
-          addr.port(),
+          self_endpoint_.hostport(),
           fd_,
           strerror(errno));
         return false;
@@ -50,7 +67,8 @@ bool Socket::listen() const
 {
     if (fd_ <= 0)
     {
-        log_error("listen on socket=%d failed: bad socket", fd_, addr.port());
+        log_error("listen on port=%d failed: bad socket",
+          self_endpoint_.hostport());
         return -1;
     }
 
@@ -62,22 +80,26 @@ bool Socket::listen() const
     return true;
 }
 
-int Socket::accept() const
+Socket *Socket::accept() const
 {
     if (fd_ <= 0)
     {
-        log_error("accept on socket=%d failed: bad socket", fd_, addr.port());
-        return -1;
+        log_error("accept on socket=%d failed: bad socket",
+          fd_,
+          self_endpoint_.hostport());
+        return nullptr;
     }
 
-    sockaddr_in saddr;
-    socklen_t   size = sizeof saddr;
-    int         ret  = ::accept(fd_, (sockaddr *)&saddr, &size);
-    if (ret == -1)
+    sockaddr_in paddr;
+    socklen_t   size = sizeof paddr;
+    int         fd   = ::accept(fd_, (sockaddr *)&paddr, &size);
+    if (fd == -1)
     {
         log_error("accept on socket=%d failed: %s", fd_, strerror(errno));
+        return nullptr;
     }
-    return ret;
+    INetAddr addr(paddr.sin_addr.s_addr, paddr.sin_port);
+    return new Socket(fd, std::move(addr));
 }
 
 int Socket::connect(const INetAddr &addr) const
@@ -86,32 +108,34 @@ int Socket::connect(const INetAddr &addr) const
     {
         log_error("connect ip=%s port=%d failed: bad socket",
           addr.ip(),
-          addr.port());
+          self_endpoint_.hostport());
         return -1;
     }
 
     sockaddr_in server;
     bzero(&server, sizeof server);
-    server.sin_family = AF_INET;
-    server.sin_port   = htobe16(addr.port());
-    inet_pton(AF_INET, addr.ip(), &server.sin_addr);
-    int ret = ::connect(fd_, (sockaddr *)&server, sizeof server);
-    if (ret == -1)
+    server.sin_family      = AF_INET;
+    server.sin_port        = htobe16(addr.netport());
+    server.sin_addr.s_addr = addr.netip();
+    int r                  = ::connect(fd_, (sockaddr *)&server, sizeof server);
+    if (r == -1)
     {
         log_error("connect ip=%s port=%d failed: %s",
           addr.ip(),
-          addr.port(),
+          self_endpoint_.hostport(),
           strerror(errno));
     }
-    return ret;
+    return r;
 }
 
 int Socket::read(char *buffer, size_t max) { return ::read(fd_, buffer, max); }
 
-int Socket::write(char *buffer, size_t send_len)
+int Socket::write(const char *buffer, size_t send_len)
 {
     return ::write(fd_, buffer, send_len);
 }
+
+int Socket::shutdown() { return ::shutdown(fd_, SHUT_WR); }
 
 void Socket::close()
 {
@@ -128,7 +152,7 @@ void Socket::close()
 
 void Socket::set_nonblock()
 {
-    if (fd <= 0)
+    if (fd_ <= 0)
         log_error("set nonblocking error due to fd<0");
 
     int flags = fcntl(fd_, F_GETFL, 0);
@@ -137,9 +161,9 @@ void Socket::set_nonblock()
         log_error("set fd nonblock error:%s", strerror(errno));
 }
 
-void Socket::set_tcp_no_delay()
+void Socket::set_tcp_nodelay()
 {
-    if (fd <= 0)
+    if (fd_ <= 0)
         log_error("set nonblocking error due to fd<0");
 
     int yes = 1;

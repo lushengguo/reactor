@@ -1,6 +1,4 @@
-#include "log.h"
-
-#include "tools.h"
+#include "base/log.hpp"
 #include <algorithm>
 #include <fcntl.h>
 #include <fstream>
@@ -54,7 +52,9 @@ void Logger::set_log_directory(const char *dir)
     filename_ = dirname_ + "/" + basename_;
     recursion_create_dir(dirname_.c_str());
 
-    int fd = open(filename_.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC | O_APPEND, DEFFILEMODE);
+    int fd = open(filename_.c_str(),
+      O_CREAT | O_WRONLY | O_CLOEXEC | O_APPEND,
+      DEFFILEMODE);
     if (fd < 0)
     {
         perror("open log file failed");
@@ -138,7 +138,8 @@ void Logger::remove_roll_out_files() const
         return;
 
     // map对时间戳排序，越早的日志文件排在越前面
-    for (FileMap::const_iterator iter = rfiles.begin(); iter != rfiles.end(); ++iter)
+    for (FileMap::const_iterator iter = rfiles.begin(); iter != rfiles.end();
+         ++iter)
     {
         if (remove(iter->second.c_str()) != 0)
             std::cerr << "remove file error : " << iter->second << std::endl;
@@ -162,7 +163,8 @@ Logger::FileMap Logger::rolling_files() const
         if (index != std::string::npos)
         {
             time_t t = atoi(name.substr(basename_.size() + 1).c_str());
-            rfiles.insert(std::pair<time_t, Filepath>(t, dirname_ + "/" + name));
+            rfiles.insert(
+              std::pair<time_t, Filepath>(t, dirname_ + "/" + name));
         }
     }
 

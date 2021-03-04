@@ -1,4 +1,6 @@
 #pragma once
+#ifndef REACTOR_THREADPOLL_HPP
+#define REACTOR_THREADPOLL_HPP
 #include "base/condition.hpp"
 #include "base/thread.hpp"
 #include <functional>
@@ -16,7 +18,7 @@ class ThreadPool
     size_t thread_num() const { return thread_num_; }
 
     void start();
-    bool add_task(Task &task);
+    bool add_task(const Task &task);
     bool add_task(Task &&task);
     bool running() const { return running_; }
 
@@ -34,3 +36,5 @@ class ThreadPool
     bool                  running_;
 };
 } // namespace reactor
+
+#endif

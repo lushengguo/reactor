@@ -28,10 +28,10 @@ class Mutex
 class MutexLockGuard
 {
   public:
-    MutexLockGuard(Mutex *mutex) : mutex_(mutex) { mutex_->lock(); }
-    ~MutexLockGuard() { mutex_->unlock(); }
+    MutexLockGuard(Mutex &mutex) : mutex_(mutex) { mutex_.lock(); }
+    ~MutexLockGuard() { mutex_.unlock(); }
 
   private:
-    Mutex *mutex_;
+    Mutex mutex_;
 };
 } // namespace reactor

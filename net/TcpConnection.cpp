@@ -1,42 +1,62 @@
-#include "base/Error.hpp"
+#include "base/Errno.hpp"
+#include "base/log.hpp"
+#include "net/Buffer.hpp"
+#include "net/EventLoop.hpp"
 #include "net/TcpConnection.hpp"
 #include <sys/epoll.h>
 #include <unistd.h>
 
-using std::placeholders;
+using namespace std::placeholders;
 namespace reactor
 {
-TcpConnection::TcpConnection(EventLoop *loop, Socket &socket)
-  : writing_(false), state_(kConnected), loop_(loop), sock_(socket)
+TcpConnection::TcpConnection(EventLoop *loop, Socket &&socket)
+  : writing_(false), state_(kConnected), loop_(loop), sock_(std::move(socket))
 {
     enable_read();
 }
 
 TcpConnection::~TcpConnection() {}
 
-size_t TcpConnection::send(Buffer *content) { return handle_write(*content); }
-
-void TcpConnection::shutdown_write()
+void TcpConnection::send(char *buf, size_t len)
 {
-    state_ = kUsHalfClose;
-    sock_.shutdown_write();
+    // IO都放到loop线程做 因为IO只是把数据拷贝到内核
+    //内存带宽远远大于网络带宽 这对网络数据收发性能无影响
+    //而且解决了读写同步问题
+    loop_->assert_in_loop_thread();
+    if (buf == nullptr || len == 0)
+        return;
+
+    // IO只会在loop线程做 所以不用考虑同步问题
+    if (write_buffer_.readable_bytes() == 0)
+    {
+        int r = sock_.write(buf, len);
+        if (r >= 0 && (static_cast<size_t>(r) <= len))
+        {
+            write_buffer_.append(buf + r, len - r);
+        }
+        else
+        {
+            handle_error();
+        }
+    }
 }
 
-void TcpConnection::close()
+void TcpConnection::remove_self_in_loop()
 {
-    state_ = kDisconnected;
-    sock_.close();
+    loop_->remove_connection(shared_from_this());
 }
+
+void TcpConnection::shutdown_write() { sock_.shutdown(); }
 
 void TcpConnection::enable_read()
 {
-    interest_event_ |= EPOLLIN;
+    interest_event_ |= EPOLLIN | EPOLLPRI;
     loop_->update_connection(shared_from_this());
 }
 
 void TcpConnection::disable_read()
 {
-    interest_event_ &= (~EPOLLIN);
+    interest_event_ &= (~(EPOLLIN | EPOLLPRI));
     loop_->update_connection(shared_from_this());
 }
 
@@ -52,117 +72,110 @@ void TcpConnection::disable_write()
     loop_->update_connection(shared_from_this());
 }
 
-bool TcpConnection::current_thread_writing() const
-{
-    return writing_tid_ == pthread_self();
-}
-
-bool TcpConnection::try_lock_write()
-{
-    if (writing_ && current_thread_writing())
-    {
-        return true;
-    }
-    else if (!writing_)
-    {
-        return lock_write();
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void TcpConnection::release_lock_write()
-{
-    if (current_thread_writing())
-    {
-        writing_     = false;
-        writing_tid_ = 0;
-    }
-}
-
-bool TcpConnection::lock_write()
-{
-    assert(!writing_);
-    MutexLockGuard lock(wrmutex_);
-    writing_     = true;
-    writing_tid_ = pthread_self();
-}
-
 void TcpConnection::handle_read(mTimestamp receive_time)
 {
-    ErrorCode err;
-    sock_.read_into_Buffer(read_buffer_, err);
-    size_t r = read_buffer_.readable_bytes();
+    loop_->assert_in_loop_thread();
+    if (state_ == kDisConnecting || state_ == kDisconnected)
+        return;
+
+    char buffer[65535];
+    int  r = sock_.read(buffer, 65535);
 
     if (r > 0)
     {
-        messageCallback_(shared_from_this(), &read_buffer_, receive_time);
+        onMessageCallback_(shared_from_this(), read_buffer_, receive_time);
     }
-    else if (r == 0 && !err)
+    else if (r == 0)
     {
-        state_ = kPeerHalfClose;
-        handleClose();
+        // peer shutdown connection
+        handle_close();
     }
     else
     {
-        state_ = kDisconnected;
-        handleError(err);
+        handle_error();
     }
 }
 
 //这里要考虑的问题是 -
-//程序运行在非阻塞下,如果IO一直不成功（即对方不接收数据）那么这个操作会一直占用一个线程
+//程序运行在非阻塞下,如果write一直不成功（即对方不接收数据而且把缓冲区设的很小）
+//那么这个操作会一直占用一个线程
 //如果用户频繁的调用Send函数 那么会将任务队列填满 即使后面增加了时间轮这个功能
-//也会有几秒钟的时间无法提供服务 写到这里我意识到这可能是一种DDOS？
-//这时一个合格的网络库该怎么做呢
-void TcpConnection::handle_write(Buffer &buffer)
+//也会有几秒钟的时间无法提供服务 写到这里我意识到这可能是一种DOS？
+//在stack overflow搜相关的防范措施看到一句话
+// I don't think there is any 100% effective software solution to DOS attacks in
+// general
+//只考虑用户不是恶意攻击的情况 长时间无法接收数据的用户
+//应该将他本能接收的后续数据丢弃 而不是让他们占着茅坑不拉屎
+
+//用户调用Send函数一定是在loop线程 handle_write也在loop线程 所以不用考虑🔒
+void TcpConnection::handle_write()
 {
-    if (buffer.readable_bytes() == 0 || !try_lock_write())
-        return;
+    loop_->assert_in_loop_thread();
 
-    if (state_ == kPeerHalfClose || state_ == kConnected)
+    if (write_buffer_.readable_bytes() == 0)
     {
-        ErrorCode err;
-        size_t    r = sock_.write(buffer.data(), buffer.readable_bytes(), err);
-        if (r == buffer.readable_bytes())
-        {
-            release_lock_write();
-        }
+        disable_write();
+        return;
+    }
 
-        //状态为EPOLLOUT才会调用这个函数
-        if (r > 0)
+    int r = sock_.write(write_buffer_.readable_data(),
+      write_buffer_.readable_bytes());
+
+    if (r >= 0)
+    {
+        size_t sr = r;
+        write_buffer_.retrive(sr);
+        if (sr == write_buffer_.readable_bytes())
         {
-            buffer.retrive(r);
+            loop_->run_in_queue(onWriteCompleteCallback_);
+            disable_write();
         }
-        else
-        {
-            state_ = kDisconnected;
-            handle_error(err);
-        }
+    }
+    else
+    {
+        handle_error();
     }
 }
 
-void TcpConnection::handle_close() { close(); }
-
-void TcpConnection::handle_error(ErrorCode err)
+//对方半关闭连接后调用这个函数 应该把要发的数据发完本端再关闭连接
+void TcpConnection::handle_close()
 {
-    log_error("TcpConnection handle error:%s", strerror(err));
+    loop_->assert_in_loop_thread();
+
+    if (write_buffer_.readable_bytes() == 0)
+        remove_self_in_loop();
+}
+
+void TcpConnection::handle_error()
+{
+    log_error("TcpConnection handle error:%s", strerror(errno));
 }
 
 void TcpConnection::handle_event(int event, mTimestamp t)
 {
-    if (event & EPOLLIN)
+
+    if (event & EPOLLERR)
     {
         loop_->run_in_queue(
-          std::bind(&TcpConnection::handle_read(), shared_from_this(), t));
+          std::bind(&TcpConnection::handle_error, shared_from_this()));
+    }
+
+    if (event & EPOLLHUP && !(event & EPOLLIN))
+    {
+        loop_->run_in_queue(
+          std::bind(&TcpConnection::handle_close, shared_from_this()));
+    }
+
+    if (event & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
+    {
+        loop_->run_in_queue(
+          std::bind(&TcpConnection::handle_read, shared_from_this(), t));
     }
 
     if (event & EPOLLOUT)
     {
         loop_->run_in_queue(
-          std::bind(&TcpConnection::handle_write(), shared_from_this()));
+          std::bind(&TcpConnection::handle_write, shared_from_this()));
     }
 }
 } // namespace reactor
