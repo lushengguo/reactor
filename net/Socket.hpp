@@ -28,6 +28,7 @@ class Socket : private noncopyable
 
     void set_tcp_nodelay();
     void set_nonblock();
+    void set_reuse_addr();
 
     int shutdown();
     int fd() const { return fd_; }

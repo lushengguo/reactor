@@ -7,6 +7,7 @@
 #include "net/EventLoop.hpp"
 #include "net/INetAddr.hpp"
 #include "net/Socket.hpp"
+#include "net/TcpConnection.hpp"
 #include <functional>
 #include <memory>
 #include <string>
@@ -20,11 +21,9 @@ class TcpServer : private noncopyable
     using MessageFunc = typename TcpConnection::MessageFunc;
     typedef std::function<void()> EventCallback;
 
-    TcpServer(EventLoop *loop, INetAddr &&addr, std::string_view server_name)
-      : endpoint_(std::move(addr)),
-        name_(server_name),
-        started_(false),
-        ploop_(loop)
+    TcpServer(
+      EventLoop *loop, const INetAddr &addr, std::string_view server_name)
+      : endpoint_(addr), name_(server_name), started_(false), loop_(loop)
     {}
 
     ~TcpServer();
@@ -41,16 +40,26 @@ class TcpServer : private noncopyable
         onMessageCallback_ = cb;
     }
 
+    void set_onConnectionCallback(EventCallback &&cb)
+    {
+        onConnectionCallback_ = std::move(cb);
+    }
+
+    void set_onMessageCallback(MessageFunc &&cb)
+    {
+        onMessageCallback_ = std::move(cb);
+    }
+
   private:
     void listen();
     void accept();
 
-    TcpConnectionPtr self_;
+    TcpConnectionPtr self_connection_;
 
     INetAddr    endpoint_;
     std::string name_;
     bool        started_;
-    EventLoop * ploop_;
+    EventLoop * loop_;
     Socket      sock_;
 
     MessageFunc   onMessageCallback_;

@@ -7,7 +7,7 @@ namespace reactor
 
 void Buffer::retrive(std::size_t n)
 {
-    if (n > windex_)
+    if (n > readable_bytes())
     {
         retrive_all();
     }
@@ -18,24 +18,17 @@ void Buffer::retrive(std::size_t n)
 }
 void Buffer::retrive_all() { rindex_ = windex_ = 0; }
 
-std::string_view Buffer::read(size_t n) const
+std::string_view Buffer::string(size_t n) const
 {
     size_t byte = (n > readable_bytes() ? readable_bytes() : n);
     return std::string_view(buffer_.data() + rindex_, byte);
-}
-
-template <typename Tp>
-void Buffer::append(Tp *p, size_t n)
-{
-    make_space_for_write(n * sizeof(Tp));
-    memcpy(buffer_.data() + windex_, p, n * sizeof(Tp));
 }
 
 void Buffer::append(std::string_view s) { append(s.data(), s.size()); }
 
 void Buffer::append(const Buffer &buffer)
 {
-    append(buffer.read(readable_bytes()));
+    append(buffer.string(buffer.readable_bytes()));
 }
 
 void Buffer::swap(Buffer &rhs)

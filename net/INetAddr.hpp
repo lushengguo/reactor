@@ -23,13 +23,13 @@ class INetAddr
         neport_ = htobe16(port);
     }
 
-    INetAddr(INetAddr &&rhs)
+    INetAddr(const INetAddr &rhs)
     {
         if (this != &rhs)
         {
-            ip_ = rhs.ip_;
-            std::swap(neip_, rhs.neip_);
-            std::swap(neport_, rhs.neport_);
+            ip_     = rhs.ip_;
+            neip_   = rhs.neip_;
+            neport_ = rhs.neport_;
         }
     }
 
@@ -45,7 +45,7 @@ class INetAddr
     }
 
     // problem
-    std::string_view readable_ip()
+    std::string_view readable_ip() const
     {
         if (ip_.empty())
         {
@@ -69,9 +69,9 @@ class INetAddr
     uint16_t netport() const { return neport_; }
 
   private:
-    std::string ip_;
-    uint32_t    neip_;
-    uint16_t    neport_;
+    mutable std::string ip_;
+    uint32_t            neip_;
+    uint16_t            neport_;
 };
 } // namespace reactor
 #endif

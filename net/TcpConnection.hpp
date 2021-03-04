@@ -32,10 +32,15 @@ class TcpConnection : private noncopyable,
     };
 
     typedef std::function<void()> EventCallback;
-    typedef std::function<void(TcpConnectionPtr, Buffer, mTimestamp)>
+    typedef std::function<void(TcpConnectionPtr, Buffer &, mTimestamp)>
       MessageFunc;
     TcpConnection(EventLoop *, Socket &&);
     ~TcpConnection();
+
+    void set_onAcceptCallback(const EventCallback &cb)
+    {
+        onAcceptCallback_ = cb;
+    }
 
     void set_onMessageCallback(const MessageFunc &cb)
     {
@@ -54,7 +59,7 @@ class TcpConnection : private noncopyable,
 
     void remove_self_in_loop();
 
-    void send(char *buf, size_t len);
+    void send(const char *buf, size_t len);
     void shutdown_write();
 
     ConnectionState state() const { return state_; }
@@ -63,11 +68,17 @@ class TcpConnection : private noncopyable,
     int  interest_event() const { return interest_event_; }
     void handle_event(int event, mTimestamp);
 
-  private:
     void enable_read();
     void disable_read();
     void enable_write();
     void disable_write();
+
+    // only accept instead of read something
+    void    set_server_mode() { server_mode_ = true; }
+    Socket *accept() { return sock_.accept(); }
+
+  private:
+    bool writing() const { return writing_; }
 
     void handle_read(mTimestamp receive_time);
     void handle_write();
@@ -77,10 +88,8 @@ class TcpConnection : private noncopyable,
   private:
     int interest_event_;
 
-    Mutex     wrmutex_;
-    Mutex     wbuffer_mutex_;
-    bool      writing_;
-    pthread_t writing_tid_;
+    bool writing_;
+    bool server_mode_;
 
     ConnectionState state_;
     EventLoop *     loop_;
@@ -89,6 +98,7 @@ class TcpConnection : private noncopyable,
     Buffer read_buffer_;
     Buffer write_buffer_;
 
+    EventCallback onAcceptCallback_;
     MessageFunc   onMessageCallback_;
     EventCallback onConnectionCallback_;
     EventCallback onWriteCompleteCallback_;

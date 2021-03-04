@@ -31,7 +31,7 @@ class Poller : private noncopyable
     constexpr static int NOEVENT = 0;
 
     int          epoll_fd_;
-    EventLoop *  ploop_;
+    EventLoop *  loop_;
     epoll_events events_;
     FdEventMap   feMap_;
 };

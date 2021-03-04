@@ -8,7 +8,7 @@
 namespace reactor
 {
 
-Poller::Poller(EventLoop *loop) : ploop_(loop)
+Poller::Poller(EventLoop *loop) : loop_(loop)
 {
     epoll_fd_ = ::epoll_create1(0);
     assert(epoll_fd_ > 0);
@@ -37,7 +37,7 @@ mTimestamp Poller::epoll()
 
 void Poller::remove_connection(int fd)
 {
-    ploop_->assert_in_loop_thread();
+    loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
@@ -51,7 +51,7 @@ void Poller::remove_connection(int fd)
 
 void Poller::new_connection(int fd, int ievent)
 {
-    ploop_->assert_in_loop_thread();
+    loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 0);
     epoll_event e;
     e.data.fd  = fd;
@@ -66,7 +66,7 @@ void Poller::new_connection(int fd, int ievent)
 
 void Poller::modify_connection(int fd, int ievent)
 {
-    ploop_->assert_in_loop_thread();
+    loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;

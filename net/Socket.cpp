@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <string_view>
 #include <strings.h>
 #include <sys/socket.h>
 
@@ -84,7 +85,7 @@ Socket *Socket::accept() const
 {
     if (fd_ <= 0)
     {
-        log_error("accept on socket=%d failed: bad socket",
+        log_error("accept on socket=%d port=%d failed: bad socket",
           fd_,
           self_endpoint_.hostport());
         return nullptr;
@@ -107,7 +108,7 @@ int Socket::connect(const INetAddr &addr) const
     if (fd_ <= 0)
     {
         log_error("connect ip=%s port=%d failed: bad socket",
-          addr.ip(),
+          addr.readable_ip().data(),
           self_endpoint_.hostport());
         return -1;
     }
@@ -121,7 +122,7 @@ int Socket::connect(const INetAddr &addr) const
     if (r == -1)
     {
         log_error("connect ip=%s port=%d failed: %s",
-          addr.ip(),
+          addr.readable_ip().data(),
           self_endpoint_.hostport(),
           strerror(errno));
     }
@@ -172,4 +173,14 @@ void Socket::set_tcp_nodelay()
         log_error("set fd tcp-nodelay error:%s", strerror(errno));
 }
 
+void Socket::set_reuse_addr()
+{
+    if (fd_ <= 0)
+        log_error("set reuse-addr error due to fd<0");
+
+    int yes = 1;
+    int r = setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof yes);
+    if (r != 0)
+        log_error("set socket resuse-addr error:%s", strerror(errno));
+}
 } // namespace reactor

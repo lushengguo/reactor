@@ -26,11 +26,16 @@ class EventLoop : private noncopyable
     typedef size_t                          TimerID;
     typedef std::map<int, TcpConnectionPtr> ConnectionMap;
 
-    EventLoop() : self_(pthread_self()) {}
+    EventLoop();
+
+    //两步构造 不能在EventLoop的构造函数里把this暴露给Poller
+    void init_poller();
 
     void loop();
 
-    void assert_in_loop_thread() const { assert(self_ == pthread_self()); }
+    //一些事件是在EventLoop所在的线程跑的
+    //如果不在这个线程里跑(比如在线程池里)就有可能出现同步问题
+    void assert_in_loop_thread() const;
 
     // timer event
     TimerID run_at(mTimestamp t, const TimerCallback &cb);
