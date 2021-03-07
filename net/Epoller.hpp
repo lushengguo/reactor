@@ -23,9 +23,9 @@ class Poller : private noncopyable
     mTimestamp          epoll();
     const epoll_events &active_events() const { return events_; }
 
-    void remove_connection(int fd);
-    void new_connection(int fd, int ievent);
-    void modify_connection(int fd, int ievent);
+    void remove_monitor_object(int fd);
+    void new_monitor_object(int fd, int ievent);
+    void modify_monitor_object(int fd, int ievent);
 
   private:
     constexpr static int NOEVENT = 0;

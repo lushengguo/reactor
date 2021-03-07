@@ -31,17 +31,18 @@ class TcpConnection : private noncopyable,
         kDisconnected
     };
 
-    typedef std::function<void()> EventCallback;
+    typedef std::function<void(TcpConnectionPtr)> EventCallback;
     typedef std::function<void(TcpConnectionPtr, Buffer &, mTimestamp)>
-      MessageFunc;
+                                  MessageFunc;
+    typedef std::function<void()> NonInputParamCallback;
+
     TcpConnection(EventLoop *, Socket &&);
     ~TcpConnection();
 
-    void set_onAcceptCallback(const EventCallback &cb)
+    void set_onAcceptCallback(const NonInputParamCallback &cb)
     {
         onAcceptCallback_ = cb;
     }
-
     void set_onMessageCallback(const MessageFunc &cb)
     {
         onMessageCallback_ = cb;
@@ -54,13 +55,17 @@ class TcpConnection : private noncopyable,
     {
         onWriteCompleteCallback_ = cb;
     }
+    void set_onCloseCallback(const NonInputParamCallback &cb)
+    {
+        onCloseCallback_ = cb;
+    }
 
     int fd() const { return sock_.fd(); }
 
     void remove_self_in_loop();
 
     void send(const char *buf, size_t len);
-    void shutdown_write();
+    void shutdown();
 
     ConnectionState state() const { return state_; }
 
@@ -98,10 +103,11 @@ class TcpConnection : private noncopyable,
     Buffer read_buffer_;
     Buffer write_buffer_;
 
-    EventCallback onAcceptCallback_;
-    MessageFunc   onMessageCallback_;
-    EventCallback onConnectionCallback_;
-    EventCallback onWriteCompleteCallback_;
+    NonInputParamCallback onAcceptCallback_;
+    MessageFunc           onMessageCallback_;
+    EventCallback         onConnectionCallback_;
+    EventCallback         onWriteCompleteCallback_;
+    NonInputParamCallback onCloseCallback_;
 };
 
 } // namespace reactor

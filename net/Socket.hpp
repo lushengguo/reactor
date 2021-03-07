@@ -2,9 +2,9 @@
 #ifndef REACTOR_SOCKET_HPP
 #define REACTOR_SOCKET_HPP
 
+#include "base/Buffer.hpp"
 #include "base/Errno.hpp"
 #include "base/noncopyable.hpp"
-#include "net/Buffer.hpp"
 #include "net/INetAddr.hpp"
 #include <errno.h>
 #include <string.h> //strerror
@@ -22,7 +22,7 @@ class Socket : private noncopyable
     bool    bind(const INetAddr &);
     bool    listen() const;
     Socket *accept() const;
-    int     connect(const INetAddr &) const;
+    bool    connect(const INetAddr &) const;
     int     read(char *buffer, size_t max);
     int     write(const char *buffer, size_t send_len);
 

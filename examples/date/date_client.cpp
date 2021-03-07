@@ -1,9 +1,12 @@
 #include "base/log.hpp"
 #include "net/EventLoop.hpp"
-#include "net/TcpServer.hpp"
+#include "net/TcpClient.hpp"
+#include <iostream>
+#include <string>
+#include <string_view>
 namespace reactor
 {
-class EchoServer
+class DateClient
 {
   public:
     void onMessage(
@@ -12,31 +15,34 @@ class EchoServer
         log_trace("recv data:%s, len=%d",
           buffer.string(buffer.readable_bytes()).data(),
           buffer.readable_bytes());
-        conn->send(buffer.readable_data(), buffer.readable_bytes());
         buffer.retrive_all();
     }
+
+  private:
+    std::string s_;
 };
 
 }; // namespace reactor
 
+//长连接 要求客户端关闭连接时能检测到
 using namespace reactor;
 using namespace std::placeholders;
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        log_error("Usage : ./echo-server <port>");
+        log_error("Usage : ./date-client <ip> <port>");
         exit(-1);
     }
 
-    EchoServer *echo = new EchoServer;
+    DateClient *date = new DateClient;
     EventLoop   loop;
-    INetAddr    addr("", atoi(argv[1]));
-    TcpServer   server(&loop, addr, "EchoServer");
+    INetAddr    addr(argv[1], atoi(argv[2]));
+    TcpClient   client(&loop, addr, "DateClient");
 
-    server.set_onMessageCallback(
-      std::bind(&EchoServer::onMessage, echo, _1, _2, _3));
+    client.set_onMessageCallback(
+      std::bind(&DateClient::onMessage, date, _1, _2, _3));
 
-    server.start();
+    client.start();
     loop.loop();
 }

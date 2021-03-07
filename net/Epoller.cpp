@@ -35,7 +35,7 @@ mTimestamp Poller::epoll()
     return now;
 }
 
-void Poller::remove_connection(int fd)
+void Poller::remove_monitor_object(int fd)
 {
     loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 1);
@@ -49,7 +49,7 @@ void Poller::remove_connection(int fd)
     }
 }
 
-void Poller::new_connection(int fd, int ievent)
+void Poller::new_monitor_object(int fd, int ievent)
 {
     loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 0);
@@ -64,7 +64,7 @@ void Poller::new_connection(int fd, int ievent)
     }
 }
 
-void Poller::modify_connection(int fd, int ievent)
+void Poller::modify_monitor_object(int fd, int ievent)
 {
     loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 1);

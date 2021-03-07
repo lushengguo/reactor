@@ -17,9 +17,7 @@
 namespace reactor
 {
 void replace_all(std::string &str, std::string from, std::string to);
-// time
-std::string fmt_timestamp(time_t t);
-time_t      reverse_fmt_timestamp(const char *tstring);
+
 // io
 size_t                   calc_file_size(const char *path);
 std::vector<std::string> get_file_names(const char *dir_path);

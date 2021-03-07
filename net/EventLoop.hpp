@@ -4,11 +4,12 @@
 
 #include "base/noncopyable.hpp"
 #include "base/threadpool.hpp"
-#include "base/timer.hpp"
 #include "base/timestamp.hpp"
+#include "net/TimerQueue.hpp"
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace reactor
@@ -25,6 +26,8 @@ class EventLoop : private noncopyable
     typedef std::function<void()>           TimerCallback;
     typedef size_t                          TimerID;
     typedef std::map<int, TcpConnectionPtr> ConnectionMap;
+    using TimerId          = TimerQueue::TimerId;
+    using TimeTaskCallback = TimerQueue::TimeTaskCallback;
 
     EventLoop();
 
@@ -37,17 +40,21 @@ class EventLoop : private noncopyable
     //如果不在这个线程里跑(比如在线程池里)就有可能出现同步问题
     void assert_in_loop_thread() const;
 
-    // timer event
-    TimerID run_at(mTimestamp t, const TimerCallback &cb);
-    TimerID run_every(mTimestamp t, const TimerCallback &cb);
-    TimerID run_after(mTimestamp t, const TimerCallback &cb);
-    void    cancel_timer_event(TimerID id);
+    // abs_mtime如果小于当前时间则不执行
+    TimerId run_at(const TimeTaskCallback &, mTimestamp abs_mtime);
+    TimerId run_after(const TimeTaskCallback &, mTimestamp after);
+    TimerId run_every(
+      const TimeTaskCallback &, mTimestamp period, mTimestamp after);
+    void cancel(TimerId);
 
     void run_in_queue(const Task &task) { pool_.add_task(task); }
     void run_in_queue(Task &&task) { pool_.add_task(std::move(task)); }
 
-    void update_connection(TcpConnectionPtr conn);
-    void remove_connection(TcpConnectionPtr conn);
+    void new_monitor_object(TimerID id);
+    void remove_monitor_object(TimerID id);
+
+    void update_monitor_object(TcpConnectionPtr conn);
+    void remove_monitor_object(TcpConnectionPtr conn);
 
   private:
     Poller *      poller_;
@@ -55,6 +62,7 @@ class EventLoop : private noncopyable
     bool          looping_;
     ThreadPool    pool_;
     ConnectionMap connMap_;
+    TimerQueue *  tqueue_;
 };
 } // namespace reactor
 #endif

@@ -22,19 +22,19 @@ Socket::Socket(Socket &&rhs)
     }
 }
 
+// private func for accept
 Socket::Socket(int fd, INetAddr &&addr)
   : self_endpoint_(std::move(addr)), backlog_(default_backlog_), fd_(fd)
 {}
 
 Socket::~Socket() { close(); }
 
-Socket::Socket(int backlog)
+Socket::Socket(int backlog) : fd_(-1)
 {
     if (backlog <= 0)
         backlog_ = default_backlog_;
     else
         backlog_ = backlog;
-
     fd_ = socket(AF_INET, SOCK_STREAM, 0);
 }
 
@@ -103,7 +103,7 @@ Socket *Socket::accept() const
     return new Socket(fd, std::move(addr));
 }
 
-int Socket::connect(const INetAddr &addr) const
+bool Socket::connect(const INetAddr &addr) const
 {
     if (fd_ <= 0)
     {
@@ -116,7 +116,7 @@ int Socket::connect(const INetAddr &addr) const
     sockaddr_in server;
     bzero(&server, sizeof server);
     server.sin_family      = AF_INET;
-    server.sin_port        = htobe16(addr.netport());
+    server.sin_port        = addr.netport();
     server.sin_addr.s_addr = addr.netip();
     int r                  = ::connect(fd_, (sockaddr *)&server, sizeof server);
     if (r == -1)
@@ -126,7 +126,7 @@ int Socket::connect(const INetAddr &addr) const
           self_endpoint_.hostport(),
           strerror(errno));
     }
-    return r;
+    return r == 0;
 }
 
 int Socket::read(char *buffer, size_t max) { return ::read(fd_, buffer, max); }

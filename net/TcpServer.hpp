@@ -18,8 +18,8 @@ namespace reactor
 class TcpServer : private noncopyable
 {
   public:
-    using MessageFunc = typename TcpConnection::MessageFunc;
-    typedef std::function<void()> EventCallback;
+    using MessageFunc   = typename TcpConnection::MessageFunc;
+    using EventCallback = typename TcpConnection::EventCallback;
 
     TcpServer(
       EventLoop *loop, const INetAddr &addr, std::string_view server_name)

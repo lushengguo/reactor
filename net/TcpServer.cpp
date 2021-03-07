@@ -24,10 +24,11 @@ void TcpServer::accept()
     Socket *newsock = self_connection_->accept();
     if (newsock)
     {
-        log_info("Server %s accept new connection,ip=%s,port=%d",
+        log_info("Server %s accept new connection,ip=%s,port=%d,allocate fd=%d",
           name_.c_str(),
           newsock->readable_ip().data(),
-          newsock->hostport());
+          newsock->hostport(),
+          newsock->fd());
         // server类的职责只有这些
         //把用户注册的事件处理方式转发给每一个Connection
         //当事件来临时 TcpConnection调用这些回调处理事件
@@ -37,6 +38,8 @@ void TcpServer::accept()
         conn->set_onMessageCallback(onMessageCallback_);
         conn->set_onWriteCompleteCallback(onWriteCompleteCallback_);
         conn->enable_read();
+        if (onConnectionCallback_)
+            onConnectionCallback_(conn);
     }
 }
 

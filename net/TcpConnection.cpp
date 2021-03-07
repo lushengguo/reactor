@@ -1,6 +1,6 @@
+#include "base/Buffer.hpp"
 #include "base/Errno.hpp"
 #include "base/log.hpp"
-#include "net/Buffer.hpp"
 #include "net/EventLoop.hpp"
 #include "net/TcpConnection.hpp"
 #include <sys/epoll.h>
@@ -17,7 +17,12 @@ TcpConnection::TcpConnection(EventLoop *loop, Socket &&socket)
     sock_(std::move(socket))
 {}
 
-TcpConnection::~TcpConnection() {}
+TcpConnection::~TcpConnection()
+{
+    log_info("close connection with ip=%s,port=%d",
+      sock_.readable_ip().data(),
+      sock_.hostport());
+}
 
 void TcpConnection::send(const char *buf, size_t len)
 {
@@ -33,7 +38,7 @@ void TcpConnection::send(const char *buf, size_t len)
     {
         assert(!writing());
         int r = sock_.write(buf, len);
-        log_trace("write %d bytes to fd=%d", r, sock_.fd());
+        // log_trace("write %d bytes to fd=%d", r, sock_.fd());
         if (r >= 0)
         {
             size_t sr = r;
@@ -56,21 +61,25 @@ void TcpConnection::send(const char *buf, size_t len)
 
 void TcpConnection::remove_self_in_loop()
 {
-    loop_->remove_connection(shared_from_this());
+    loop_->remove_monitor_object(shared_from_this());
 }
 
-void TcpConnection::shutdown_write() { sock_.shutdown(); }
+void TcpConnection::shutdown()
+{
+    sock_.shutdown();
+    remove_self_in_loop();
+}
 
 void TcpConnection::enable_read()
 {
     interest_event_ |= EPOLLIN | EPOLLPRI;
-    loop_->update_connection(shared_from_this());
+    loop_->update_monitor_object(shared_from_this());
 }
 
 void TcpConnection::disable_read()
 {
     interest_event_ &= (~(EPOLLIN | EPOLLPRI));
-    loop_->update_connection(shared_from_this());
+    loop_->update_monitor_object(shared_from_this());
 }
 
 void TcpConnection::enable_write()
@@ -80,7 +89,7 @@ void TcpConnection::enable_write()
 
     writing_ = true;
     interest_event_ |= EPOLLOUT;
-    loop_->update_connection(shared_from_this());
+    loop_->update_monitor_object(shared_from_this());
 }
 
 void TcpConnection::disable_write()
@@ -90,7 +99,7 @@ void TcpConnection::disable_write()
 
     writing_ = false;
     interest_event_ &= (~EPOLLOUT);
-    loop_->update_connection(shared_from_this());
+    loop_->update_monitor_object(shared_from_this());
 }
 
 void TcpConnection::handle_read(mTimestamp receive_time)
@@ -111,7 +120,7 @@ void TcpConnection::handle_read(mTimestamp receive_time)
 
         if (r > 0)
         {
-            log_trace("recv %d bytes from peer", r);
+            // log_trace("recv %d bytes from peer", r);
             read_buffer_.append(buffer, static_cast<size_t>(r));
             onMessageCallback_(shared_from_this(), read_buffer_, receive_time);
         }
@@ -149,7 +158,8 @@ void TcpConnection::handle_write()
         write_buffer_.retrive(sr);
         if (sr == write_buffer_.readable_bytes())
         {
-            loop_->run_in_queue(onWriteCompleteCallback_);
+            loop_->run_in_queue(
+              std::bind(onWriteCompleteCallback_, shared_from_this()));
             disable_write();
         }
     }
@@ -165,7 +175,11 @@ void TcpConnection::handle_close()
     loop_->assert_in_loop_thread();
 
     if (write_buffer_.readable_bytes() == 0)
+    {
         remove_self_in_loop();
+        if (onCloseCallback_)
+            onCloseCallback_();
+    }
 }
 
 void TcpConnection::handle_error()
@@ -173,6 +187,8 @@ void TcpConnection::handle_error()
     loop_->assert_in_loop_thread();
     log_error("TcpConnection handle error:%s", strerror(errno));
     remove_self_in_loop();
+    if (onCloseCallback_)
+        onCloseCallback_();
 }
 
 void TcpConnection::handle_event(int event, mTimestamp t)

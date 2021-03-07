@@ -7,23 +7,18 @@ void ThreadPool::run_in_thread()
     while (true)
     {
         compete_cond_.wait();
-        log_trace("thread id=%ld wake up", pthread_self());
         task_queue_mutex_.lock();
-        log_trace("thread id=%ld lock the queue mutex", pthread_self());
         Task task;
         if (!tasks_.empty())
         {
             task = std::move(tasks_.front());
             tasks_.pop_front();
-            log_trace("thread id=%ld get the task", pthread_self());
         }
         task_queue_mutex_.unlock();
-        log_trace("thread id=%ld unlock the queue mutex", pthread_self());
         if (task)
         {
             task();
         }
-        log_trace("thread id=%ld call task finish", pthread_self());
     }
 }
 bool ThreadPool::add_task(Task &&task)
@@ -37,7 +32,7 @@ bool ThreadPool::add_task(Task &&task)
     else
     {
         log_debug("add task to pThreadPool task queue ,call later");
-        tasks_.push_back(std::move(task));
+        tasks_.emplace_back(std::move(task));
     }
 
     if (!tasks_.empty())
@@ -72,11 +67,16 @@ bool ThreadPool::add_task(const Task &task)
 
 void ThreadPool::start()
 {
+    // not thread safe
+    if (started_)
+        return;
+
     for (size_t i = 0; i < thread_num_; i++)
     {
         threads_.emplace_back(
           new Thread(std::bind(&ThreadPool::run_in_thread, this)));
         threads_[i]->start();
     }
-    running_ = true;
+    started_ = true;
+    compete_cond_.broadcast();
 }

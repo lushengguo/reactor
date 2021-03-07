@@ -1,4 +1,5 @@
 #include "base/log.hpp"
+#include "base/timestamp.hpp"
 #include <algorithm>
 #include <fcntl.h>
 #include <fstream>
