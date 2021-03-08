@@ -49,7 +49,6 @@ void TcpServer::start()
     if (started_)
         return;
 
-    loop_->init_poller();
     started_ = true;
 
     sock_.set_reuse_addr();

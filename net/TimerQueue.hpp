@@ -13,9 +13,8 @@ class EventLoop;
 class TimerQueue : private noncopyable
 {
   public:
-    typedef std::function<void()> TimeTaskCallback;
-    typedef int                   TimerId;
-
+    typedef std::function<void()>                         TimeTaskCallback;
+    typedef int                                           TimerId;
     typedef std::unordered_map<TimerId, TimeTaskCallback> TimerMap;
 
     TimerQueue(EventLoop *loop);
@@ -28,15 +27,16 @@ class TimerQueue : private noncopyable
 
     bool contain(TimerId id) const { return timerMap_.count(id); }
 
-    void handle_event(TimerId);
+    void handle_event(TimerId, int event);
 
   private:
+    bool    period_timer_task(TimerId id) const;
     TimerId create_timer_object(
-      const TimeTaskCallback &cb, mTimestamp period, mTimestamp after);
+      const TimeTaskCallback &cb, mTimestamp period, mTimestamp abs_mtime);
 
   private:
-    EventLoop *loop_;
     TimerMap   timerMap_;
+    EventLoop *loop_;
 };
 } // namespace reactor
 

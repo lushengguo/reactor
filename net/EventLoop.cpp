@@ -6,12 +6,19 @@
 namespace reactor
 {
 
-EventLoop::EventLoop() : self_(pthread_self()), looping_(false) {}
+EventLoop::EventLoop()
+  : poller_(nullptr), tqueue_(nullptr), self_(pthread_self()), looping_(false)
+{}
 
-void EventLoop::init_poller()
+void EventLoop::init()
 {
-    poller_ = new Poller(this);
-    tqueue_ = new TimerQueue(this);
+    if (poller_ == nullptr && tqueue_ == nullptr)
+    {
+        poller_ = new Poller(this);
+        tqueue_ = new TimerQueue(this);
+    }
+
+    pool_.start();
 }
 
 void EventLoop::loop()
@@ -21,35 +28,31 @@ void EventLoop::loop()
         return;
 
     looping_ = true;
-    pool_.start();
-    assert(poller_);
-
     while (true)
     {
         mTimestamp receive_time = poller_->epoll();
-
-        const Poller::epoll_events &events = poller_->active_events();
+        auto       events       = poller_->active_events();
         for (const epoll_event &event : events)
         {
             // events的size等于当前poller监听描述符的数量
             // poller返回的events会把最后一个活跃的event的下一个event的events设为0
             // 如果存在的话
             if (event.events == 0)
-            {
                 break;
-            }
 
             //判断是否是定时事件
             if (tqueue_->contain(event.data.fd))
             {
-                tqueue_->handle_event(event.data.fd);
+                tqueue_->handle_event(event.data.fd, event.events);
                 continue;
             }
 
-            //不是的话那一定是连接事件了
-            assert(connMap_.count(event.data.fd) == 1);
-            connMap_.at(event.data.fd)
-              ->handle_event(event.events, receive_time);
+            //连接事件
+            if (connMap_.count(event.data.fd) == 1)
+            {
+                connMap_.at(event.data.fd)
+                  ->handle_event(event.events, receive_time);
+            }
         }
     }
 }

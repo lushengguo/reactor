@@ -21,7 +21,10 @@ mTimestamp Poller::epoll()
         events_.resize(feMap_.size());
     }
 
-    int        r = ::epoll_wait(epoll_fd_, events_.data(), feMap_.size(), 1000);
+    if (feMap_.empty())
+        return mtime();
+
+    int        r   = ::epoll_wait(epoll_fd_, events_.data(), feMap_.size(), 1);
     mTimestamp now = mtime();
     if (r == -1)
     {
@@ -41,6 +44,7 @@ void Poller::remove_monitor_object(int fd)
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
+    e.events  = NOEVENT;
     feMap_.erase(fd);
     int r = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, &e);
     if (r != 0)

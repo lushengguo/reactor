@@ -32,8 +32,9 @@ int main(int argc, char **argv)
 
     EchoServer *echo = new EchoServer;
     EventLoop   loop;
-    INetAddr    addr("", atoi(argv[1]));
-    TcpServer   server(&loop, addr, "EchoServer");
+    loop.init();
+    INetAddr  addr("", atoi(argv[1]));
+    TcpServer server(&loop, addr, "EchoServer");
 
     server.set_onMessageCallback(
       std::bind(&EchoServer::onMessage, echo, _1, _2, _3));

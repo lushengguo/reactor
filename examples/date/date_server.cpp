@@ -30,8 +30,9 @@ int main(int argc, char **argv)
 
     DateServer *date = new DateServer;
     EventLoop   loop;
-    INetAddr    addr("", atoi(argv[1]));
-    TcpServer   server(&loop, addr, "DateServer");
+    loop.init();
+    INetAddr  addr("", atoi(argv[1]));
+    TcpServer server(&loop, addr, "DateServer");
 
     server.set_onConnectionCallback(
       std::bind(&DateServer::onConnection, date, _1));

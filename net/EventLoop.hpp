@@ -32,11 +32,12 @@ class EventLoop : private noncopyable
     EventLoop();
 
     //两步构造 不能在EventLoop的构造函数里把this暴露给Poller
-    void init_poller();
+    //但是有线程安全问题
+    void init();
 
     void loop();
 
-    //一些事件是在EventLoop所在的线程跑的
+    //一些事件设计的要在EventLoop所在的线程跑
     //如果不在这个线程里跑(比如在线程池里)就有可能出现同步问题
     void assert_in_loop_thread() const;
 
@@ -50,6 +51,8 @@ class EventLoop : private noncopyable
     void run_in_queue(const Task &task) { pool_.add_task(task); }
     void run_in_queue(Task &&task) { pool_.add_task(std::move(task)); }
 
+  public:
+    //用户不要调用这些
     void new_monitor_object(TimerID id);
     void remove_monitor_object(TimerID id);
 
@@ -58,11 +61,11 @@ class EventLoop : private noncopyable
 
   private:
     Poller *      poller_;
+    TimerQueue *  tqueue_;
     pthread_t     self_;
     bool          looping_;
     ThreadPool    pool_;
     ConnectionMap connMap_;
-    TimerQueue *  tqueue_;
 };
 } // namespace reactor
 #endif

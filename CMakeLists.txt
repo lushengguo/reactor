@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(reactor)
 
 set(CMAKE_CXX_FLAGS
-    " -std=c++17 -g -Wall -Wextra -Werror -Wno-unused-parameter  -Wshadow ")
+    " -std=c++2a -g -Wall -Wextra -Werror -Wno-unused-parameter  -Wshadow ")
 
 find_package(Threads REQUIRED)
 
