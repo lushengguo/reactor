@@ -48,9 +48,8 @@ int main(int argc, char **argv)
 
     EchoClient *echo = new EchoClient;
     EventLoop   loop;
-    loop.init();
-    INetAddr  addr(argv[1], atoi(argv[2]));
-    TcpClient client(&loop, addr, "EchoClient");
+    INetAddr    addr(argv[1], atoi(argv[2]));
+    TcpClient   client(&loop, addr, "EchoClient");
 
     client.set_onConnectionCallback(
       std::bind(&EchoClient::onConnection, echo, _1));

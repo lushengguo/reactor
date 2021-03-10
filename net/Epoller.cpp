@@ -14,7 +14,7 @@ Poller::Poller(EventLoop *loop) : loop_(loop)
     assert(epoll_fd_ > 0);
 }
 
-mTimestamp Poller::epoll()
+mTimestamp Poller::epoll(mTimestamp timeout)
 {
     if (events_.size() < feMap_.size())
     {
@@ -24,7 +24,7 @@ mTimestamp Poller::epoll()
     if (feMap_.empty())
         return mtime();
 
-    int        r   = ::epoll_wait(epoll_fd_, events_.data(), feMap_.size(), 1);
+    int r = ::epoll_wait(epoll_fd_, events_.data(), feMap_.size(), timeout);
     mTimestamp now = mtime();
     if (r == -1)
     {
@@ -40,7 +40,6 @@ mTimestamp Poller::epoll()
 
 void Poller::remove_monitor_object(int fd)
 {
-    loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
@@ -55,7 +54,6 @@ void Poller::remove_monitor_object(int fd)
 
 void Poller::new_monitor_object(int fd, int ievent)
 {
-    loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 0);
     epoll_event e;
     e.data.fd  = fd;
@@ -70,7 +68,6 @@ void Poller::new_monitor_object(int fd, int ievent)
 
 void Poller::modify_monitor_object(int fd, int ievent)
 {
-    loop_->assert_in_loop_thread();
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;

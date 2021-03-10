@@ -37,9 +37,8 @@ int main(int argc, char **argv)
 
     DateClient *date = new DateClient;
     EventLoop   loop;
-    loop.init();
-    INetAddr  addr(argv[1], atoi(argv[2]));
-    TcpClient client(&loop, addr, "DateClient");
+    INetAddr    addr(argv[1], atoi(argv[2]));
+    TcpClient   client(&loop, addr, "DateClient");
 
     client.set_onMessageCallback(
       std::bind(&DateClient::onMessage, date, _1, _2, _3));

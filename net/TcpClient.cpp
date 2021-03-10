@@ -43,7 +43,6 @@ void TcpClient::start()
 
 void TcpClient::onServerCloseCallback()
 {
-    loop_->assert_in_loop_thread();
     log_info("server closed the connection, program quit now");
     exit(0);
 }

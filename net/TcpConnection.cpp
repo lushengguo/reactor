@@ -29,7 +29,6 @@ void TcpConnection::send(const char *buf, size_t len)
     // IO都放到loop线程做 因为IO只是把数据拷贝到内核
     //内存带宽远远大于网络带宽 这对网络数据收发性能无影响
     //而且解决了读写同步问题
-    loop_->assert_in_loop_thread();
     if (buf == nullptr || len == 0)
         return;
 
@@ -104,10 +103,6 @@ void TcpConnection::disable_write()
 
 void TcpConnection::handle_read(mTimestamp receive_time)
 {
-    loop_->assert_in_loop_thread();
-    // if (state_ == kDisConnecting || state_ == kDisconnected)
-    //     return;
-
     if (server_mode_)
     {
         if (onAcceptCallback_)
@@ -140,7 +135,6 @@ void TcpConnection::handle_read(mTimestamp receive_time)
 //不管是send还是handle_write 如果写不成功就把剩下的数据存起来
 void TcpConnection::handle_write()
 {
-    loop_->assert_in_loop_thread();
     assert(writing());
 
     if (write_buffer_.readable_bytes() == 0)
@@ -158,7 +152,7 @@ void TcpConnection::handle_write()
         write_buffer_.retrive(sr);
         if (sr == write_buffer_.readable_bytes())
         {
-            loop_->run_in_queue(
+            loop_->run_in_work_thread(
               std::bind(onWriteCompleteCallback_, shared_from_this()));
             disable_write();
         }
@@ -172,8 +166,6 @@ void TcpConnection::handle_write()
 //对方半关闭连接后调用这个函数 应该把要发的数据发完本端再关闭连接
 void TcpConnection::handle_close()
 {
-    loop_->assert_in_loop_thread();
-
     if (write_buffer_.readable_bytes() == 0)
     {
         remove_self_in_loop();
@@ -184,7 +176,6 @@ void TcpConnection::handle_close()
 
 void TcpConnection::handle_error()
 {
-    loop_->assert_in_loop_thread();
     log_error("TcpConnection handle error:%s", strerror(errno));
     remove_self_in_loop();
     if (onCloseCallback_)

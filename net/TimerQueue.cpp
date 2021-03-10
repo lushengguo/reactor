@@ -3,99 +3,121 @@
 #include <assert.h>
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
+#include <unistd.h>
 
 namespace reactor
 {
+
 TimerQueue::TimerQueue(EventLoop *loop) : loop_(loop) {}
 
 TimerQueue::TimerId TimerQueue::run_at(
-  const TimeTaskCallback &cb, mTimestamp abs_mtime)
+  const TimerTaskCallback &cb, mTimestamp abs_mtime)
 {
-    if (abs_mtime < mtime())
-        return -1;
+    mTimestamp now = mtime();
 
-    return create_timer_object(cb, 0, abs_mtime);
+    if (abs_mtime < now)
+    {
+        return -1;
+    }
+    else if (abs_mtime == now)
+    {
+        loop_->run_in_work_thread(cb);
+        return -1;
+    }
+    else
+    {
+        return run_after(cb, abs_mtime - now);
+    }
 }
 
 TimerQueue::TimerId TimerQueue::run_after(
-  const TimeTaskCallback &cb, mTimestamp after)
+  const TimerTaskCallback &cb, mTimestamp after)
 {
-    return run_at(cb, mtime() + after);
+    TimerId id = create_TimerId();
+    loop_->run_in_loop_thread(
+      std::bind(&TimerQueue::create_timer_event, this, id, cb, 0, after));
+    return id;
 }
 
 TimerQueue::TimerId TimerQueue::run_every(
-  const TimeTaskCallback &cb, mTimestamp after, mTimestamp period)
+  const TimerTaskCallback &cb, mTimestamp after, mTimestamp period)
 {
-    return create_timer_object(cb, period, after);
+    TimerId id = create_TimerId();
+    loop_->run_in_loop_thread(
+      std::bind(&TimerQueue::create_timer_event, this, id, cb, period, after));
+    return id;
 }
 
 void TimerQueue::cancel(TimerQueue::TimerId id)
 {
-    if (timerMap_.count(id) == 1)
-    {
-        timerMap_.erase(id);
-        loop_->remove_monitor_object(id);
-    }
+    loop_->assert_in_loop_thread();
+
+    if (timerMap_.count(id) != 1)
+        return;
+
+    timerMap_.erase(id);
+    loop_->remove_monitor_object(id);
+    close(id);
 }
 
-TimerQueue::TimerId TimerQueue::create_timer_object(
-  const TimeTaskCallback &cb, mTimestamp period, mTimestamp abs_mtime)
+TimerQueue::TimerId TimerQueue::create_TimerId() const
 {
-    int fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK | TFD_CLOEXEC);
-    assert(fd > 0);
-    itimerspec ispec;
-    if (period != 0)
-    {
-        ispec.it_interval.tv_sec  = period / 1000000;
-        ispec.it_interval.tv_nsec = (period % 1000000) * 1000;
-    }
-    else
-    {
-        ispec.it_interval.tv_sec  = 0;
-        ispec.it_interval.tv_nsec = 0;
-    }
+    int id = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
+    assert(id > 0);
+    return id;
+}
 
-    ispec.it_value.tv_sec  = abs_mtime / 1000000;
-    ispec.it_value.tv_nsec = (abs_mtime % 1000000) * 1000;
-    log_trace("new timer event will be called at %ld.%09lds, period=%ld.%09lds",
+TimerQueue::TimerId TimerQueue::create_timer_event(
+  TimerId id, const TimerTaskCallback &cb, mTimestamp period, mTimestamp after)
+{
+    loop_->assert_in_loop_thread();
+
+    itimerspec ispec;
+    ispec.it_interval.tv_sec  = period / 1000;
+    ispec.it_interval.tv_nsec = (period % 1000) * 1000000;
+    ispec.it_value.tv_sec     = after / 1000;
+    ispec.it_value.tv_nsec    = (after % 1000) * 1000000;
+    log_trace(
+      "new timer event will be called after %ld.%09lds, period=%ld.%09lds",
       ispec.it_value.tv_sec,
       ispec.it_value.tv_nsec,
       ispec.it_interval.tv_sec,
       ispec.it_interval.tv_nsec);
 
-    if (timerfd_settime(fd, TFD_TIMER_ABSTIME, &ispec, nullptr) == -1)
+    if (timerfd_settime(id, 0, &ispec, nullptr) == -1)
     {
-        log_error("timer fd set timer failed:%s", strerror(errno));
+        log_error("timer id set timer failed:%s", strerror(errno));
     }
-    timerMap_[fd] = cb;
-    loop_->new_monitor_object(static_cast<TimerId>(fd));
 
-    return fd;
+    timerMap_[id] = {period != 0, cb};
+    loop_->new_monitor_object(static_cast<TimerId>(id));
+
+    return id;
 }
 
-bool TimerQueue::period_timer_task(TimerId id) const
+bool TimerQueue::periodical(TimerId id) const
 {
-    itimerspec ispec;
-    int        r = timerfd_gettime(id, &ispec);
-    if (r == -1)
-    {
-        log_error("get time of timer fd failed:%s", strerror(errno));
-        return false;
-    }
-
-    return ispec.it_interval.tv_sec != 0 || ispec.it_interval.tv_nsec != 0;
+    loop_->assert_in_loop_thread();
+    return timerMap_.at(id).periodical_;
 }
 
 void TimerQueue::handle_event(TimerId id, int event)
 {
     loop_->assert_in_loop_thread();
-    assert(timerMap_.count(id) == 1);
-    if (!(event & EPOLLIN))
+
+    //可能在触发前被取消了
+    if (timerMap_.count(id) != 1)
         return;
 
-    //用户注册的回调如果有线程安全问题 怎么解决？
-    loop_->run_in_queue(timerMap_.at(id));
-    if (!period_timer_task(id))
-        cancel(id);
+    assert(event & EPOLLIN);
+
+    size_t val;
+    int    r = ::read(id, &val, sizeof val);
+    assert(r == sizeof val);
+
+    TimerTaskCallback cb = timerMap_.at(id).cb;
+    loop_->run_in_work_thread(std::move(cb));
+    if (!periodical(id))
+        loop_->run_in_loop_thread(std::bind(&TimerQueue::cancel, this, id));
 }
 } // namespace reactor

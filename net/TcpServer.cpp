@@ -17,8 +17,6 @@ TcpServer::~TcpServer()
 
 void TcpServer::accept()
 {
-    loop_->assert_in_loop_thread();
-
     //临时创建socket 然后std::move给TcpConnection
     //连接的生命期由TcpConnection管理 析构时自动关闭连接
     Socket *newsock = self_connection_->accept();

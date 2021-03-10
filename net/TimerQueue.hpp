@@ -13,16 +13,21 @@ class EventLoop;
 class TimerQueue : private noncopyable
 {
   public:
-    typedef std::function<void()>                         TimeTaskCallback;
-    typedef int                                           TimerId;
-    typedef std::unordered_map<TimerId, TimeTaskCallback> TimerMap;
+    typedef std::function<void()> TimerTaskCallback;
+    typedef int                   TimerId;
+    typedef struct
+    {
+        bool              periodical_;
+        TimerTaskCallback cb;
+    } TimerTaskRecord;
+    typedef std::unordered_map<TimerId, TimerTaskRecord> TimerMap;
 
     TimerQueue(EventLoop *loop);
 
-    TimerId run_at(const TimeTaskCallback &, mTimestamp abs_mtime);
-    TimerId run_after(const TimeTaskCallback &, mTimestamp after);
+    TimerId run_at(const TimerTaskCallback &, mTimestamp abs_mtime);
+    TimerId run_after(const TimerTaskCallback &, mTimestamp after);
     TimerId run_every(
-      const TimeTaskCallback &, mTimestamp after, mTimestamp period);
+      const TimerTaskCallback &, mTimestamp after, mTimestamp period);
     void cancel(TimerId);
 
     bool contain(TimerId id) const { return timerMap_.count(id); }
@@ -30,9 +35,12 @@ class TimerQueue : private noncopyable
     void handle_event(TimerId, int event);
 
   private:
-    bool    period_timer_task(TimerId id) const;
-    TimerId create_timer_object(
-      const TimeTaskCallback &cb, mTimestamp period, mTimestamp abs_mtime);
+    TimerId create_TimerId() const;
+    bool    periodical(TimerId id) const;
+    TimerId create_timer_event(TimerId id,
+      const TimerTaskCallback &        cb,
+      mTimestamp                       period,
+      mTimestamp                       after);
 
   private:
     TimerMap   timerMap_;
