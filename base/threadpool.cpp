@@ -31,7 +31,7 @@ bool ThreadPool::add_task(Task &&task)
     }
     else
     {
-        log_debug("add task to work thread");
+        // log_debug("add task to work thread");
         tasks_.emplace_back(std::move(task));
     }
 
@@ -53,7 +53,7 @@ bool ThreadPool::add_task(const Task &task)
     }
     else
     {
-        log_debug("add task to work thread");
+        // log_debug("add task to work thread");
         tasks_.emplace_back(task);
     }
 

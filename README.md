@@ -1,11 +1,7 @@
 # reactor
 network server lib based on reactor mode
 
-写着写着发现保证库本身是线程安全的是一件很困难的事情
-首先我们主线程里跑事件循环
-用户调用loop.run_at(),事件触发的时候回调应该在主线程跑还是子线程跑？
-
-在主线程跑的话，如果用户注册的回调是死循环呢？
-在子线程跑的话，如何保证用户不会在子线程里调用loop的接口？
-
-我打算尝试把用户要用到的接口明确定义出来,然后确保这些接口是线程安全的
+# install
+git clone -recursive git@github.com:lushengguo/reactor.git
+cd reactor
+./build.sh

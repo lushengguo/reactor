@@ -18,7 +18,7 @@ inline mTimestamp mtime()
     struct timeval tv;
     ::gettimeofday(&tv, nullptr);
     mTimestamp seconds = tv.tv_sec;
-    return seconds * 1000 * 1000 + tv.tv_usec;
+    return seconds * 1000000 + tv.tv_usec;
 }
 } // namespace reactor
 

@@ -8,6 +8,7 @@
 #include "net/Socket.hpp"
 #include <functional>
 #include <memory>
+#include <string_view>
 
 namespace reactor
 {
@@ -64,6 +65,7 @@ class TcpConnection : private noncopyable,
 
     void remove_self_in_loop();
 
+    void send(std::string_view m);
     void send(const char *buf, size_t len);
     void shutdown();
 

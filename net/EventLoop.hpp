@@ -18,6 +18,7 @@ namespace reactor
 class Poller;
 class TcpConnection;
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
+typedef std::weak_ptr<TcpConnection>   TcpConnectionWeakPtr;
 
 //所有接口都是线程安全的 如果线程不安全程序会直接abort并且告知错误行为
 //不会产生UB

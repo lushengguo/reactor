@@ -24,6 +24,8 @@ TcpConnection::~TcpConnection()
       sock_.hostport());
 }
 
+void TcpConnection::send(std::string_view m) { send(m.data(), m.size()); }
+
 void TcpConnection::send(const char *buf, size_t len)
 {
     // IO都放到loop线程做 因为IO只是把数据拷贝到内核
