@@ -10,7 +10,7 @@ class EchoServer
       TcpConnectionPtr conn, Buffer &buffer, mTimestamp receive_timestamp)
     {
         log_trace("recv data:%s, len=%d",
-          buffer.string(buffer.readable_bytes()).data(),
+          buffer.read_all_as_string().data(),
           buffer.readable_bytes());
         conn->send(buffer.readable_data(), buffer.readable_bytes());
         buffer.retrive_all();

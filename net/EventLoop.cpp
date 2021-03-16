@@ -48,7 +48,6 @@ void EventLoop::handle_event(mTimestamp receive_time)
 
 void EventLoop::loop()
 {
-    assert_in_loop_thread();
     if (looping_)
         return;
 
@@ -185,7 +184,8 @@ void EventLoop::run_in_work_thread(const Task &task)
     }
     else
     {
-        run_in_loop_thread(task);
+        MutexLockGuard lock(task_queue_mutex_);
+        task_queue_.emplace_back([&, this]() { run_in_work_thread(task); });
     }
 }
 
@@ -197,7 +197,9 @@ void EventLoop::run_in_work_thread(Task &&task)
     }
     else
     {
-        run_in_loop_thread(std::move(task));
+        MutexLockGuard lock(task_queue_mutex_);
+        task_queue_.emplace_back(
+          [&, this]() { run_in_work_thread(std::move(task)); });
     }
 }
 

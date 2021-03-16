@@ -65,14 +65,14 @@ class EventLoop : private noncopyable
     void handle_event(mTimestamp);
 
   private:
-    Poller *        poller_;
-    TimerQueue *    tqueue_;
-    const pthread_t self_;
-    bool            looping_;
-    ThreadPool      pool_;
-    ConnectionMap   connMap_;
-    TaskQueue       task_queue_;
-    Mutex           task_queue_mutex_;
+    Poller *      poller_;
+    TimerQueue *  tqueue_;
+    pthread_t     self_;
+    bool          looping_;
+    ThreadPool    pool_;
+    ConnectionMap connMap_;
+    TaskQueue     task_queue_;
+    Mutex         task_queue_mutex_;
 };
 } // namespace reactor
 #endif

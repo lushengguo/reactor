@@ -25,14 +25,17 @@ static void *run(void *object)
 namespace reactor
 {
 
-void Thread::start()
+Thread &Thread::start()
 {
     if (started_)
-        return;
+        return *this;
 
     started_ = true;
     assert(pthread_create(&tid_, nullptr, launch::run, this) == 0);
+    return *this;
 }
+
+void Thread::detach() { assert(pthread_detach(tid_) == 0); }
 
 void Thread::join()
 {

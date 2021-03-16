@@ -17,7 +17,7 @@ Socket::Socket(Socket &&rhs)
 {
     if (this != &rhs)
     {
-        close();
+        fd_ = -1;
         std::swap(fd_, rhs.fd_);
     }
 }
@@ -145,7 +145,9 @@ void Socket::close()
         int r = ::close(fd_);
         if (r != 0)
         {
-            log_warn("close file descriptor failed:%s", strerror(errno));
+            log_warn("close file descriptor failed,fd=%d:%s",
+              fd_,
+              strerror(errno));
         }
     }
     fd_ = -1;

@@ -21,7 +21,7 @@ class EchoClient
       TcpConnectionPtr conn, Buffer &buffer, mTimestamp receive_timestamp)
     {
         std::cout << "recv from server << "
-                  << buffer.string(buffer.readable_bytes()).data() << std::endl;
+                  << buffer.read_all_as_string().data() << std::endl;
         buffer.retrive_all();
 
         std::cout << "please input message >> " << std::flush;

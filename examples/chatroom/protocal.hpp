@@ -28,6 +28,7 @@ class Protocal
         kQuitChat,
         //
         kMessage,
+        kPosition,
         kError
     };
 
@@ -40,10 +41,11 @@ class Protocal
     //简单点 用户输入什么client就发给server什么
     // server返回什么client端都直接打印
     //这样只需要处理server端的逻辑就可以了
-
     //缺点是费流量 占通讯资源 网络状态不好时用户不会收到提示信息
+    Cmd server_parse_message(
+      const std::string &raw_data, std::string &extra_message);
 
-    Cmd server_parse_message(const std::string &input, std::string &message);
+    std::string cmd_to_string(Cmd cmd);
 };
 
 } // namespace reactor

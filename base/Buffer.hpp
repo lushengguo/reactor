@@ -21,6 +21,10 @@ class Buffer
 
     //往buffer里读写
     std::string_view string(size_t n) const;
+    std::string_view read_all_as_string() const
+    {
+        return std::string_view(string(readable_bytes()));
+    }
 
     template <typename Tp>
     void append(Tp *p, size_t n)

@@ -62,7 +62,10 @@ void Poller::new_monitor_object(int fd, int ievent)
     int r      = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &e);
     if (r != 0)
     {
-        log_warn("add fd to poller failed:%s", strerror(errno));
+        log_warn("add fd to poller failed,fd=%d,ievent=%d:%s",
+          fd,
+          ievent,
+          strerror(errno));
     }
 }
 

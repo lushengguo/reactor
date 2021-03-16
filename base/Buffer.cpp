@@ -28,7 +28,7 @@ void Buffer::append(std::string_view s) { append(s.data(), s.size()); }
 
 void Buffer::append(const Buffer &buffer)
 {
-    append(buffer.string(buffer.readable_bytes()));
+    append(buffer.read_all_as_string());
 }
 
 void Buffer::swap(Buffer &rhs)
