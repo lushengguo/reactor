@@ -28,34 +28,44 @@ void TcpConnection::send(std::string_view m) { send(m.data(), m.size()); }
 
 void TcpConnection::send(const char *buf, size_t len)
 {
-    // IO都放到loop线程做 因为IO只是把数据拷贝到内核
-    //内存带宽远远大于网络带宽 这对网络数据收发性能无影响
-    //而且解决了读写同步问题
     if (buf == nullptr || len == 0)
         return;
 
-    // IO只会在loop线程做 所以不用考虑同步问题
-    if (write_buffer_.readable_bytes() == 0)
+    // IO都放到loop线程做 因为IO只是把数据拷贝到内核
+    //内存带宽远远大于网络带宽 这对网络数据收发性能无影响
+    //而且解决了读写同步问题
+    if (loop_->in_loop_thread())
     {
-        assert(!writing());
-        int r = sock_.write(buf, len);
-        // log_trace("write %d bytes to fd=%d", r, sock_.fd());
-        if (r >= 0)
+        if (write_buffer_.readable_bytes() == 0)
         {
+            int r = sock_.write(buf, len);
+            log_trace("write %d bytes to fd=%d", r, sock_.fd());
+            if (r < 0)
+                handle_error();
+
+            // remain bytes
             size_t sr = r;
             if (sr < len)
             {
-                enable_write();
+                log_debug("send incomplete ,save to write buffer");
+                listen_on_write_event();
                 write_buffer_.append(buf + r, len - sr);
             }
         }
         else
         {
-            handle_error();
+            log_debug("write buffer is not empty, send incomplete ,save to "
+                      "write buffer");
+            listen_on_write_event();
+            write_buffer_.append(buf, len);
         }
     }
     else
     {
+        log_debug("not in loop thread, send failed, save data to write buffer");
+        //存储到write_buffer_里 由wr回调负责全部发送出去
+        listen_on_write_event();
+        MutexLockGuard lock(wr_buffer_mutex_);
         write_buffer_.append(buf, len);
     }
 }
@@ -71,7 +81,7 @@ void TcpConnection::shutdown()
     remove_self_in_loop();
 }
 
-void TcpConnection::enable_read()
+void TcpConnection::listen_on_read_event()
 {
     interest_event_ |= EPOLLIN | EPOLLPRI;
     loop_->update_monitor_object(shared_from_this());
@@ -83,7 +93,7 @@ void TcpConnection::disable_read()
     loop_->update_monitor_object(shared_from_this());
 }
 
-void TcpConnection::enable_write()
+void TcpConnection::listen_on_write_event()
 {
     if (writing())
         return;
@@ -138,15 +148,21 @@ void TcpConnection::handle_read(mTimestamp receive_time)
 void TcpConnection::handle_write()
 {
     assert(writing());
-
+    MutexLockGuard lock(wr_buffer_mutex_);
     if (write_buffer_.readable_bytes() == 0)
     {
         disable_write();
         return;
     }
 
+    //主线程负责写暂存未发送出去的内容 send函数只是负责发一次
+    //全部发完由回调处理
+    log_debug("write buffer non-empty,send in write event handler");
+    log_debug("data in write buffer:[%s]",
+      write_buffer_.read_all_as_string().data());
     int r = sock_.write(write_buffer_.readable_data(),
       write_buffer_.readable_bytes());
+    log_debug("send %d bytes in write event handler", r);
 
     if (r >= 0)
     {
@@ -186,7 +202,6 @@ void TcpConnection::handle_error()
 
 void TcpConnection::handle_event(int event, mTimestamp t)
 {
-
     if (event & EPOLLERR)
     {
         handle_error();

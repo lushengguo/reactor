@@ -35,7 +35,7 @@ void TcpServer::accept()
         conn->set_onConnectionCallback(onConnectionCallback_);
         conn->set_onMessageCallback(onMessageCallback_);
         conn->set_onWriteCompleteCallback(onWriteCompleteCallback_);
-        conn->enable_read();
+        conn->listen_on_read_event();
         if (onConnectionCallback_)
             onConnectionCallback_(conn);
     }
@@ -62,7 +62,7 @@ void TcpServer::start()
     //上面有一个问题 - 每一个通讯的单位应该是Channel
     //但是我全部把他们的所有接口都写到TcpConnection里了
     //不得不在TcpConnection里开后门 支持server-mode
-    self_connection_->enable_read();
+    self_connection_->listen_on_read_event();
     log_info("TcpServer register listening in loop finish");
 }
 

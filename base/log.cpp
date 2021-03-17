@@ -77,7 +77,8 @@ void Logger::append(std::string header, std::string content, Timestamp t)
     MutexLockGuard lock(mutex_);
     std::string    now;
     t == 0 ? now = fmt_timestamp(time(nullptr)) : now = fmt_timestamp(t);
-    std::string s(now + +" |" + header + "| " + content + "\n");
+    std::string s(now);
+    s.append(" |").append(header).append("| ").append(content).append("\n");
     print(s);
     // Trace不保存
     if (strcasestr(header.c_str(), "trace") == nullptr)

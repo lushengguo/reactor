@@ -1,26 +1,42 @@
 #include "base/mixed.hpp"
+#include <algorithm>
 #include <dirent.h>
 #include <fcntl.h>
+#include <fstream>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <fstream>
-#include <string>
 namespace reactor
 {
-void replace_all(std::string &str, std::string from, std::string to)
+std::string replace_all(
+  std::string_view str, std::string_view from, std::string_view to)
 {
-    if (str.empty() || from.empty())
-        return;
+    std::string s(str);
+    if (from.empty() || str.empty())
+        return s;
 
-    size_t index;
-    while ((index = str.find(from)) != std::string::npos)
-    { str.replace(index, from.size(), to); }
+    size_t index = 0;
+    while ((index = s.find(from, index)) != std::string::npos)
+    {
+        s.replace(index, from.size(), to);
+        index += to.size();
+    }
+    return s;
+}
+
+bool is_numeric_string(std::string_view s)
+{
+    if (s.empty())
+        return false;
+
+    return static_cast<size_t>(std::count_if(s.begin(),
+             s.end(),
+             [](unsigned char ch) { return std::isdigit(ch); })) == s.size();
 }
 
 size_t calc_file_size(const char *path)

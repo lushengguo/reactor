@@ -75,9 +75,9 @@ class TcpConnection : private noncopyable,
     int  interest_event() const { return interest_event_; }
     void handle_event(int event, mTimestamp);
 
-    void enable_read();
+    void listen_on_read_event();
     void disable_read();
-    void enable_write();
+    void listen_on_write_event();
     void disable_write();
 
     // only accept instead of read something
@@ -104,6 +104,7 @@ class TcpConnection : private noncopyable,
 
     Buffer read_buffer_;
     Buffer write_buffer_;
+    Mutex  wr_buffer_mutex_;
 
     NonInputParamCallback onAcceptCallback_;
     MessageFunc           onMessageCallback_;

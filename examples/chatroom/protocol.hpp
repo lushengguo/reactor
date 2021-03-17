@@ -43,7 +43,7 @@ class Protocal
     //这样只需要处理server端的逻辑就可以了
     //缺点是费流量 占通讯资源 网络状态不好时用户不会收到提示信息
     Cmd server_parse_message(
-      const std::string &raw_data, std::string &extra_message);
+      const std::string &raw_message, std::string &extra_message);
 
     std::string cmd_to_string(Cmd cmd);
 };

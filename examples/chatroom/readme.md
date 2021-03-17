@@ -1,0 +1,4 @@
+client只是从标准输入读数据转发到server server解析后发送完整ack
+
+# 支持群聊和私聊
+具体使用方法在运行client时会有提示

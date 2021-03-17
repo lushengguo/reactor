@@ -16,7 +16,11 @@ class INetAddr
     INetAddr(uint32_t ip, uint16_t port) : neip_(ip), neport_(port) {}
     INetAddr(std::string_view ip, uint16_t port) : ip_(ip)
     {
-        int r = inet_pton(AF_INET, ip.data(), &neip_);
+        std::string iip(ip);
+        if (ip == "local_host")
+            iip = "127.0.0.1";
+
+        int r = inet_pton(AF_INET, iip.c_str(), &neip_);
         if (r != 1)
             neip_ = 0;
 

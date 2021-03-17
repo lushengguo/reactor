@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <unistd.h>
 #include <vector>
 
@@ -16,7 +17,10 @@
 
 namespace reactor
 {
-void replace_all(std::string &str, std::string from, std::string to);
+std::string replace_all(
+  std::string_view str, std::string_view from, std::string_view to);
+
+bool is_numeric_string(std::string_view s);
 
 // io
 size_t                   calc_file_size(const char *path);

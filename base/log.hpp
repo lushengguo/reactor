@@ -113,4 +113,5 @@ inline void set_max_roll_time(size_t size) { Logger::get().set_max_roll(size); }
         .append(reactor::Basename(__FILE__))                                   \
         .append("-")                                                           \
         .append(std::to_string(__LINE__)))
+
 #endif

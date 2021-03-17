@@ -56,10 +56,10 @@ class EventLoop : private noncopyable
     void run_in_loop_thread(Task &&func);
 
     //新的监控事件
-    void new_monitor_object(TimerId id);
-    void remove_monitor_object(TimerId id);
-    void update_monitor_object(TcpConnectionPtr conn);
-    void remove_monitor_object(TcpConnectionPtr conn);
+    void new_monitor_object(TimerId);
+    void remove_monitor_object(TimerId);
+    void update_monitor_object(TcpConnectionPtr);
+    void remove_monitor_object(TcpConnectionPtr);
 
     void run_buffered_task();
     void handle_event(mTimestamp);

@@ -5,10 +5,6 @@
 
 namespace reactor
 {
-#define ENSURE_THREAD_SAFE_HEADER    run_in_loop_thread([&, this]() {
-#define ENSURE_THREAD_SAFE_TAIL                                                \
-    });
-
 EventLoop::EventLoop()
   : poller_(new Poller(this)),
     tqueue_(new TimerQueue(this)),
@@ -60,30 +56,33 @@ void EventLoop::loop()
     }
 }
 
-void EventLoop::update_monitor_object(TcpConnectionPtr conn)
+void EventLoop::update_monitor_object(TcpConnectionPtr conn1)
 {
-    ENSURE_THREAD_SAFE_HEADER
-    if (connMap_.count(conn->fd()) == 1)
-    {
-        poller_->modify_monitor_object(conn->fd(), conn->interest_event());
-    }
-    else
-    {
-        connMap_.insert(std::make_pair(conn->fd(), conn));
-        poller_->new_monitor_object(conn->fd(), conn->interest_event());
-    }
-    ENSURE_THREAD_SAFE_TAIL
+    auto func = [&](TcpConnectionPtr conn) {
+        if (connMap_.count(conn->fd()) == 1)
+        {
+            poller_->modify_monitor_object(conn->fd(), conn->interest_event());
+        }
+        else
+        {
+            connMap_.insert(std::make_pair(conn->fd(), conn));
+            poller_->new_monitor_object(conn->fd(), conn->interest_event());
+        }
+    };
+
+    run_in_loop_thread(std::bind(func, conn1));
 }
 
-void EventLoop::remove_monitor_object(TcpConnectionPtr conn)
+void EventLoop::remove_monitor_object(TcpConnectionPtr conn1)
 {
-    ENSURE_THREAD_SAFE_HEADER
-    assert(connMap_.count(conn->fd()) == 1);
-    poller_->remove_monitor_object(conn->fd());
-    // connection的生命周期由EventLoop管理
-    // erase后析构自动断开连接(前提是用户没有保存TcpConnectionPtr)
-    connMap_.erase(conn->fd());
-    ENSURE_THREAD_SAFE_TAIL
+    auto func = [&](TcpConnectionPtr conn) {
+        assert(connMap_.count(conn->fd()) == 1);
+        poller_->remove_monitor_object(conn->fd());
+        // connection的生命周期由EventLoop管理
+        // erase后析构自动断开连接(前提是用户没有保存TcpConnectionPtr)
+        connMap_.erase(conn->fd());
+    };
+    run_in_loop_thread(std::bind(func, conn1));
 }
 
 void EventLoop::assert_in_loop_thread() const { assert(in_loop_thread()); }
@@ -106,25 +105,22 @@ EventLoop::TimerId EventLoop::run_every(
     return tqueue_->run_every(cb, period, after);
 }
 
-void EventLoop::cancel(EventLoop::TimerId id)
+void EventLoop::cancel(EventLoop::TimerId id1)
 {
-    ENSURE_THREAD_SAFE_HEADER;
-    tqueue_->cancel(id);
-    ENSURE_THREAD_SAFE_TAIL;
+    auto func = [&](TimerId id) { tqueue_->cancel(id); };
+    run_in_loop_thread(std::bind(func, id1));
 }
 
-void EventLoop::new_monitor_object(EventLoop::TimerId id)
+void EventLoop::new_monitor_object(EventLoop::TimerId id1)
 {
-    ENSURE_THREAD_SAFE_HEADER
-    poller_->new_monitor_object(id, EPOLLIN);
-    ENSURE_THREAD_SAFE_TAIL
+    auto func = [&](TimerId id) { poller_->new_monitor_object(id, EPOLLIN); };
+    run_in_loop_thread(std::bind(func, id1));
 }
 
-void EventLoop::remove_monitor_object(EventLoop::TimerId id)
+void EventLoop::remove_monitor_object(EventLoop::TimerId id1)
 {
-    ENSURE_THREAD_SAFE_HEADER
-    poller_->remove_monitor_object(id);
-    ENSURE_THREAD_SAFE_TAIL
+    auto func = [&](TimerId id) { poller_->remove_monitor_object(id); };
+    run_in_loop_thread(std::bind(func, id1));
 }
 
 void EventLoop::run_in_loop_thread(const Task &func)
@@ -153,25 +149,17 @@ void EventLoop::run_in_loop_thread(Task &&func)
     }
 }
 
-bool EventLoop::in_loop_thread() const
-{
-    if (self_ != pthread_self())
-    {
-        log_error("loop thread id=%d,call assert thread id=%d",
-          self_,
-          pthread_self());
-        return false;
-    }
-    return true;
-}
+bool EventLoop::in_loop_thread() const { return self_ == pthread_self(); }
 
 void EventLoop::run_buffered_task()
 {
     assert_in_loop_thread();
     MutexLockGuard lock(task_queue_mutex_);
-    for (auto func : task_queue_)
+    while (!task_queue_.empty())
     {
-        func();
+        if (task_queue_.front())
+            task_queue_.front()();
+
         task_queue_.pop_front();
     }
 }

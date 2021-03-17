@@ -22,6 +22,7 @@ void TcpClient::start()
           server_endpoint_.readable_ip().data(),
           server_endpoint_.hostport(),
           strerror(errno));
+        exit(0);
     }
 
     self_connection_ = std::make_shared<TcpConnection>(loop_, std::move(sock_));
@@ -38,7 +39,7 @@ void TcpClient::start()
         self_connection_->set_onCloseCallback(
           std::bind(&TcpClient::onServerCloseCallback, this)); // default
     }
-    self_connection_->enable_read();
+    self_connection_->listen_on_read_event();
 }
 
 void TcpClient::onServerCloseCallback()

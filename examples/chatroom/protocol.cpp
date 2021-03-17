@@ -1,18 +1,18 @@
-#include "protocal.hpp"
+#include "protocol.hpp"
 #include <regex>
 
 namespace reactor
 {
 Protocal::Cmd Protocal::server_parse_message(
-  const std::string &raw_data, std::string &extra_message)
+  const std::string &raw_message, std::string &extra_message)
 {
     std::regex  without_message("//([a-z]+)\\s*");
-    std::regex  with_message("//([a-z]+)\\s+((\\w+))");
-    std::smatch result;
-    if (std::regex_match(raw_data, result, without_message))
+    std::regex  regex_with_message("//([a-z]+)\\s+((\\w+))");
+    std::smatch regex_result;
+    if (std::regex_match(raw_message, regex_result, without_message))
     {
         //这些指令是不需要输入message变量的
-        std::string_view cmd(result[1].str());
+        std::string_view cmd(regex_result[1].str());
         if (cmd == "help" || cmd == "h")
             return kRequestHelp;
         else if (cmd == "rooms" || cmd == "rs")
@@ -28,10 +28,10 @@ Protocal::Cmd Protocal::server_parse_message(
         else
             return kError;
     }
-    else if (std::regex_match(raw_data, result, with_message))
+    else if (std::regex_match(raw_message, regex_result, regex_with_message))
     {
-        std::string_view cmd(result[1].str());
-        std::string_view pm(result[2].str());
+        std::string_view cmd(regex_result[1].str());
+        std::string_view pm(regex_result[2].str());
         if (cmd == "create-room" || cmd == "cr")
         {
             extra_message = pm;
@@ -58,7 +58,7 @@ Protocal::Cmd Protocal::server_parse_message(
         }
     }
 
-    extra_message = raw_data;
+    extra_message = raw_message;
     return kMessage;
 }
 

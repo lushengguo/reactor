@@ -10,7 +10,7 @@ class DateServer
     void onConnection(TcpConnectionPtr conn)
     {
         std::string date = readable_current_time();
-        conn->send(date.c_str(), date.size());
+        conn->send(date);
         conn->shutdown();
     }
 };

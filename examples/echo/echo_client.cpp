@@ -14,7 +14,7 @@ class EchoClient
     {
         std::cout << "please input message >> " << std::flush;
         std::getline(std::cin, s_);
-        conn->send(s_.c_str(), s_.size());
+        conn->send(s_);
     }
 
     void onMessage(
@@ -26,7 +26,7 @@ class EchoClient
 
         std::cout << "please input message >> " << std::flush;
         std::getline(std::cin, s_);
-        conn->send(s_.c_str(), s_.size());
+        conn->send(s_);
     }
 
   private:
