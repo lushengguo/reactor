@@ -29,19 +29,29 @@ class TcpClient : private noncopyable
         onConnectionCallback_ = cb;
     }
 
-    void set_onMessageCallback(const MessageFunc &cb)
-    {
-        onMessageCallback_ = cb;
-    }
-
     void set_onConnectionCallback(EventCallback &&cb)
     {
         onConnectionCallback_ = std::move(cb);
     }
 
+    void set_onMessageCallback(const MessageFunc &cb)
+    {
+        onMessageCallback_ = cb;
+    }
+
     void set_onMessageCallback(MessageFunc &&cb)
     {
         onMessageCallback_ = std::move(cb);
+    }
+
+    void set_onServerCloseCallback(const NonInputParamCallback &cb)
+    {
+        onServerCloseCallback_ = cb;
+    }
+
+    void set_onServerCloseCallback(NonInputParamCallback &&cb)
+    {
+        onServerCloseCallback_ = std::move(cb);
     }
 
     // default

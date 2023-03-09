@@ -33,8 +33,7 @@ class TcpConnection : private noncopyable,
     };
 
     typedef std::function<void(TcpConnectionPtr)> EventCallback;
-    typedef std::function<void(TcpConnectionPtr, Buffer &, mTimestamp)>
-                                  MessageFunc;
+    typedef std::function<void(TcpConnectionPtr, Buffer &, MicroTimeStamp)> MessageFunc;
     typedef std::function<void()> NonInputParamCallback;
 
     TcpConnection(EventLoop *, Socket &&);
@@ -73,7 +72,7 @@ class TcpConnection : private noncopyable,
 
     void set_interest_event(int event) { interest_event_ = event; }
     int  interest_event() const { return interest_event_; }
-    void handle_event(int event, mTimestamp);
+    void handle_event(int event, MicroTimeStamp);
 
     void listen_on_read_event();
     void disable_read();
@@ -84,10 +83,12 @@ class TcpConnection : private noncopyable,
     void    set_server_mode() { server_mode_ = true; }
     Socket *accept() { return sock_.accept(); }
 
+    std::string peer_addr() { return sock_.peer_addr(); }
+
   private:
     bool writing() const { return writing_; }
 
-    void handle_read(mTimestamp receive_time);
+    void handle_read(MicroTimeStamp receive_time);
     void handle_write();
     void handle_error();
     void handle_close();

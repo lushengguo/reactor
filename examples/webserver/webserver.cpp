@@ -9,8 +9,7 @@ namespace reactor
 class WebServer : private noncopyable
 {
   public:
-    void onMessage(
-      TcpConnectionPtr conn, Buffer &buffer, mTimestamp receive_time)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_time)
     {
         ParseStatus status =
           parser_.parse(buffer.readable_data(), buffer.readable_data());

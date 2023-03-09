@@ -52,8 +52,7 @@ class RedisClient : RedisProtocol
         conn_ = conn;
     }
 
-    void onMessage(
-      TcpConnectionPtr conn, Buffer &buffer, mTimestamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
     {
         size_t len = 0;
         response_  = "";

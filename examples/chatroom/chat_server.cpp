@@ -196,10 +196,7 @@ class ChatServer : noncopyable, Protocal
         }
     }
 
-    std::string package_message(UserId id,
-      std::string_view                 message,
-      mTimestamp                       receive_timestamp,
-      const char *                     room_name = nullptr)
+    std::string package_message(UserId id, std::string_view message, MicroTimeStamp receive_timestamp, const char *room_name = nullptr)
     {
         std::string m("[");
         m.append(fmt_timestamp(receive_timestamp / 1000000))
@@ -212,8 +209,7 @@ class ChatServer : noncopyable, Protocal
     }
 
     // id是发送方的id
-    void post_message(
-      UserId id, std::string_view message, mTimestamp receive_timstamp)
+    void post_message(UserId id, std::string_view message, MicroTimeStamp receive_timstamp)
     {
         std::string_view talking_to(users_.at(id).talking_to_);
         if (talking_to == "")
@@ -250,8 +246,7 @@ class ChatServer : noncopyable, Protocal
         conn->send(help);
     }
 
-    void onMessage(
-      TcpConnectionPtr conn, Buffer &buffer, mTimestamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
     {
         std::string message;
         bool        r  = true; //默认操作成功

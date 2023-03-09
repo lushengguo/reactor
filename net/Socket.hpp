@@ -33,7 +33,8 @@ class Socket : private noncopyable
     int shutdown();
     int fd() const { return fd_; }
 
-    std::string_view readable_ip() { return self_endpoint_.readable_ip(); }
+    std::string readable_ip() { return self_endpoint_.readable_ip(); }
+    std::string peer_addr() { return self_endpoint_.peer_addr(); }
     uint16_t         hostport() { return self_endpoint_.hostport(); }
 
   private:

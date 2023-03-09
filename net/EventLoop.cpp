@@ -14,7 +14,7 @@ EventLoop::EventLoop()
     pool_.start();
 }
 
-void EventLoop::handle_event(mTimestamp receive_time)
+void EventLoop::handle_event(MicroTimeStamp receive_time)
 {
     assert_in_loop_thread();
     auto events = poller_->active_events();
@@ -50,7 +50,7 @@ void EventLoop::loop()
     looping_ = true;
     while (true)
     {
-        mTimestamp receive_time = poller_->epoll(10);
+        MicroTimeStamp receive_time = poller_->epoll(10);
         run_buffered_task();
         handle_event(receive_time);
     }
@@ -87,20 +87,17 @@ void EventLoop::remove_monitor_object(TcpConnectionPtr conn1)
 
 void EventLoop::assert_in_loop_thread() const { assert(in_loop_thread()); }
 
-EventLoop::TimerId EventLoop::run_at(
-  const EventLoop::TimerTaskCallback &cb, mTimestamp abs_mtime)
+EventLoop::TimerId EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
 {
     return tqueue_->run_at(cb, abs_mtime);
 }
 
-EventLoop::TimerId EventLoop::run_after(
-  const EventLoop::TimerTaskCallback &cb, mTimestamp after)
+EventLoop::TimerId EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp after)
 {
     return tqueue_->run_after(cb, after);
 }
 
-EventLoop::TimerId EventLoop::run_every(
-  const EventLoop::TimerTaskCallback &cb, mTimestamp period, mTimestamp after)
+EventLoop::TimerId EventLoop::run_every(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after)
 {
     return tqueue_->run_every(cb, period, after);
 }

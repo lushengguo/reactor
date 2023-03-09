@@ -10,10 +10,9 @@ namespace reactor
 
 TimerQueue::TimerQueue(EventLoop *loop) : loop_(loop) {}
 
-TimerQueue::TimerId TimerQueue::run_at(
-  const TimerTaskCallback &cb, mTimestamp abs_mtime)
+TimerQueue::TimerId TimerQueue::run_at(const TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
 {
-    mTimestamp now = mtime();
+    MicroTimeStamp now = micro_timestamp();
 
     if (abs_mtime < now)
     {
@@ -30,8 +29,7 @@ TimerQueue::TimerId TimerQueue::run_at(
     }
 }
 
-TimerQueue::TimerId TimerQueue::run_after(
-  const TimerTaskCallback &cb, mTimestamp after)
+TimerQueue::TimerId TimerQueue::run_after(const TimerTaskCallback &cb, MicroTimeStamp after)
 {
     TimerId id = create_TimerId();
     loop_->run_in_loop_thread(
@@ -39,8 +37,7 @@ TimerQueue::TimerId TimerQueue::run_after(
     return id;
 }
 
-TimerQueue::TimerId TimerQueue::run_every(
-  const TimerTaskCallback &cb, mTimestamp after, mTimestamp period)
+TimerQueue::TimerId TimerQueue::run_every(const TimerTaskCallback &cb, MicroTimeStamp after, MicroTimeStamp period)
 {
     TimerId id = create_TimerId();
     loop_->run_in_loop_thread(
@@ -67,8 +64,7 @@ TimerQueue::TimerId TimerQueue::create_TimerId() const
     return id;
 }
 
-TimerQueue::TimerId TimerQueue::create_timer_event(
-  TimerId id, const TimerTaskCallback &cb, mTimestamp period, mTimestamp after)
+TimerQueue::TimerId TimerQueue::create_timer_event(TimerId id, const TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after)
 {
     loop_->assert_in_loop_thread();
 

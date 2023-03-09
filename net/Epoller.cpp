@@ -14,7 +14,7 @@ Poller::Poller(EventLoop *loop) : loop_(loop)
     assert(epoll_fd_ > 0);
 }
 
-mTimestamp Poller::epoll(mTimestamp timeout)
+MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
 {
     if (events_.size() < feMap_.size())
     {
@@ -22,10 +22,10 @@ mTimestamp Poller::epoll(mTimestamp timeout)
     }
 
     if (feMap_.empty())
-        return mtime();
+        return micro_timestamp();
 
     int r = ::epoll_wait(epoll_fd_, events_.data(), feMap_.size(), timeout);
-    mTimestamp now = mtime();
+    MicroTimeStamp now = micro_timestamp();
     if (r == -1)
     {
         log_error("epoll error:%s", strerror(errno));

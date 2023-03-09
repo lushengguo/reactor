@@ -35,10 +35,9 @@ class EventLoop : private noncopyable
 
     void loop();
     // abs_mtime如果小于当前时间则不执行
-    TimerId run_at(const TimerTaskCallback &, mTimestamp abs_mtime);
-    TimerId run_after(const TimerTaskCallback &, mTimestamp after);
-    TimerId run_every(
-      const TimerTaskCallback &, mTimestamp period, mTimestamp after);
+    TimerId run_at(const TimerTaskCallback &, MicroTimeStamp abs_mtime);
+    TimerId run_after(const TimerTaskCallback &, MicroTimeStamp after);
+    TimerId run_every(const TimerTaskCallback &, MicroTimeStamp period, MicroTimeStamp after);
     void cancel(TimerId);
 
     /*以下接口仅内部类调用 用户调用上面的接口*/
@@ -62,7 +61,7 @@ class EventLoop : private noncopyable
     void remove_monitor_object(TcpConnectionPtr);
 
     void run_buffered_task();
-    void handle_event(mTimestamp);
+    void handle_event(MicroTimeStamp);
 
   private:
     Poller *      poller_;

@@ -16,8 +16,7 @@ class ChatClient
       : client(loop, addr, "ChatClient")
     {}
 
-    void onMessage(
-      TcpConnectionPtr conn, Buffer &buffer, mTimestamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
     {
         std::cout << buffer.read_all_as_string() << std::endl;
         buffer.retrive_all();

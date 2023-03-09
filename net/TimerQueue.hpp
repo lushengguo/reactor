@@ -24,10 +24,9 @@ class TimerQueue : private noncopyable
 
     TimerQueue(EventLoop *loop);
 
-    TimerId run_at(const TimerTaskCallback &, mTimestamp abs_mtime);
-    TimerId run_after(const TimerTaskCallback &, mTimestamp after);
-    TimerId run_every(
-      const TimerTaskCallback &, mTimestamp after, mTimestamp period);
+    TimerId run_at(const TimerTaskCallback &, MicroTimeStamp abs_mtime);
+    TimerId run_after(const TimerTaskCallback &, MicroTimeStamp after);
+    TimerId run_every(const TimerTaskCallback &, MicroTimeStamp after, MicroTimeStamp period);
     void cancel(TimerId);
 
     bool contain(TimerId id) const { return timerMap_.count(id); }
@@ -37,10 +36,7 @@ class TimerQueue : private noncopyable
   private:
     TimerId create_TimerId() const;
     bool    periodical(TimerId id) const;
-    TimerId create_timer_event(TimerId id,
-      const TimerTaskCallback &        cb,
-      mTimestamp                       period,
-      mTimestamp                       after);
+    TimerId create_timer_event(TimerId id, const TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after);
 
   private:
     TimerMap   timerMap_;

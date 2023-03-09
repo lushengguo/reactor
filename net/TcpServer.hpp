@@ -35,14 +35,14 @@ class TcpServer : private noncopyable
         onConnectionCallback_ = cb;
     }
 
-    void set_onMessageCallback(const MessageFunc &cb)
-    {
-        onMessageCallback_ = cb;
-    }
-
     void set_onConnectionCallback(EventCallback &&cb)
     {
         onConnectionCallback_ = std::move(cb);
+    }
+
+    void set_onMessageCallback(const MessageFunc &cb)
+    {
+        onMessageCallback_ = cb;
     }
 
     void set_onMessageCallback(MessageFunc &&cb)
