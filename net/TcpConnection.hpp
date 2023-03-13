@@ -19,8 +19,7 @@ class TcpConnection;
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
 // TcpServer和TcpClient共用
 // 用户只需要针对Connection做处理
-class TcpConnection : private noncopyable,
-                      public std::enable_shared_from_this<TcpConnection>
+class TcpConnection : private noncopyable, public std::enable_shared_from_this<TcpConnection>
 {
   public:
     enum ConnectionState
@@ -39,26 +38,11 @@ class TcpConnection : private noncopyable,
     TcpConnection(EventLoop *, Socket &&);
     ~TcpConnection();
 
-    void set_onAcceptCallback(const NonInputParamCallback &cb)
-    {
-        onAcceptCallback_ = cb;
-    }
-    void set_onMessageCallback(const MessageFunc &cb)
-    {
-        onMessageCallback_ = cb;
-    }
-    void set_onConnectionCallback(const EventCallback &cb)
-    {
-        onConnectionCallback_ = cb;
-    }
-    void set_onWriteCompleteCallback(const EventCallback &cb)
-    {
-        onWriteCompleteCallback_ = cb;
-    }
-    void set_onCloseCallback(const NonInputParamCallback &cb)
-    {
-        onCloseCallback_ = cb;
-    }
+    void set_onAcceptCallback(const NonInputParamCallback &cb) { onAcceptCallback_ = cb; }
+    void set_onMessageCallback(const MessageFunc &cb) { onMessageCallback_ = cb; }
+    void set_onConnectionCallback(const EventCallback &cb) { onConnectionCallback_ = cb; }
+    void set_onWriteCompleteCallback(const EventCallback &cb) { onWriteCompleteCallback_ = cb; }
+    void set_onCloseCallback(const NonInputParamCallback &cb) { onCloseCallback_ = cb; }
 
     int fd() const { return sock_.fd(); }
 
@@ -71,7 +55,7 @@ class TcpConnection : private noncopyable,
     ConnectionState state() const { return state_; }
 
     void set_interest_event(int event) { interest_event_ = event; }
-    int  interest_event() const { return interest_event_; }
+    int interest_event() const { return interest_event_; }
     void handle_event(int event, MicroTimeStamp);
 
     void listen_on_read_event();
@@ -80,7 +64,7 @@ class TcpConnection : private noncopyable,
     void disable_write();
 
     // only accept instead of read something
-    void    set_server_mode() { server_mode_ = true; }
+    void set_server_mode() { server_mode_ = true; }
     Socket *accept() { return sock_.accept(); }
 
     std::string peer_addr() { return sock_.peer_addr(); }
@@ -100,17 +84,17 @@ class TcpConnection : private noncopyable,
     bool server_mode_;
 
     ConnectionState state_;
-    EventLoop *     loop_;
-    Socket          sock_;
+    EventLoop *loop_;
+    Socket sock_;
 
     Buffer read_buffer_;
     Buffer write_buffer_;
-    Mutex  wr_buffer_mutex_;
+    Mutex wr_buffer_mutex_;
 
     NonInputParamCallback onAcceptCallback_;
-    MessageFunc           onMessageCallback_;
-    EventCallback         onConnectionCallback_;
-    EventCallback         onWriteCompleteCallback_;
+    MessageFunc onMessageCallback_;
+    EventCallback onConnectionCallback_;
+    EventCallback onWriteCompleteCallback_;
     NonInputParamCallback onCloseCallback_;
 };
 

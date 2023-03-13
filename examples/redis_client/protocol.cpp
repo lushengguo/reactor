@@ -1,14 +1,13 @@
+#include "protocol.hpp"
 #include "base/log.hpp"
 #include "base/mixed.hpp"
-#include "protocol.hpp"
 #include <assert.h>
 #include <iostream>
 #include <map>
 #include <regex>
 namespace reactor
 {
-size_t RedisProtocol::parse_response(
-  const std::string &frame, std::string &result)
+size_t RedisProtocol::parse_response(const std::string &frame, std::string &result)
 {
     if (frame.empty())
         return 0;
@@ -22,7 +21,7 @@ size_t RedisProtocol::parse_response(
 
     //找到一个ack的起始位置
     ResponseType type;
-    int          header_index = find_header(frame, type);
+    int header_index = find_header(frame, type);
     if (header_index == -1)
     {
         // can not find header should retrieve all
@@ -32,22 +31,26 @@ size_t RedisProtocol::parse_response(
     // 解析不完全有两种可能：
     // 1.报文不完整/丢包 这个暂时不考虑 - - 比较复杂
     // 2.只收到了一部分ack 等待一整个报文到达后返回response
-    size_t response_len =
-      generic_parse(frame.substr(header_index), result, type);
+    size_t response_len = generic_parse(frame.substr(header_index), result, type);
     return response_len + header_index;
 }
 
-size_t RedisProtocol::generic_parse(
-  const std::string &frame, std::string &result, ResponseType type)
+size_t RedisProtocol::generic_parse(const std::string &frame, std::string &result, ResponseType type)
 {
     switch (type)
     {
-    case kSimpleStringItem: return parse_simple_string_item(frame, result);
-    case kArrayItem: return parse_array_item(frame, result);
-    case kErrString: return parse_err_string(frame, result);
-    case kNumberItem: return parse_number_item(frame, result);
-    case kBulkString: return parse_bulk_string(frame, result);
-    default: return 0;
+    case kSimpleStringItem:
+        return parse_simple_string_item(frame, result);
+    case kArrayItem:
+        return parse_array_item(frame, result);
+    case kErrString:
+        return parse_err_string(frame, result);
+    case kNumberItem:
+        return parse_number_item(frame, result);
+    case kBulkString:
+        return parse_bulk_string(frame, result);
+    default:
+        return 0;
     }
 }
 
@@ -87,10 +90,9 @@ int RedisProtocol::find_header(const std::string &frame, ResponseType &type)
     return -1;
 }
 
-size_t RedisProtocol::parse_simple_string_item(
-  const std::string &frame, std::string &result)
+size_t RedisProtocol::parse_simple_string_item(const std::string &frame, std::string &result)
 {
-    std::regex  match("\\+([a-zA-Z]+)\r\n");
+    std::regex match("\\+([a-zA-Z]+)\r\n");
     std::smatch regex_result;
     if (std::regex_match(frame, regex_result, match))
     {
@@ -101,8 +103,7 @@ size_t RedisProtocol::parse_simple_string_item(
     return 0;
 }
 
-size_t RedisProtocol::parse_array_item(
-  const std::string &frame, std::string &result)
+size_t RedisProtocol::parse_array_item(const std::string &frame, std::string &result)
 {
     size_t first_crlf = frame.find("\r\n");
     if (first_crlf == std::string::npos)
@@ -118,11 +119,10 @@ size_t RedisProtocol::parse_array_item(
     while (array_size)
     {
         ResponseType type;
-        std::string  array_item;
+        std::string array_item;
         int header_index = find_header(frame.substr(array_item_index), type);
         assert(header_index == 0);
-        size_t response_len =
-          generic_parse(frame.substr(array_item_index), array_item, type);
+        size_t response_len = generic_parse(frame.substr(array_item_index), array_item, type);
         // incomplete response
         if (response_len == 0)
         {
@@ -139,10 +139,9 @@ size_t RedisProtocol::parse_array_item(
     return array_item_index;
 }
 
-size_t RedisProtocol::parse_err_string(
-  const std::string &frame, std::string &result)
+size_t RedisProtocol::parse_err_string(const std::string &frame, std::string &result)
 {
-    std::regex  match("\\-([^\r\n]+)\r\n");
+    std::regex match("\\-([^\r\n]+)\r\n");
     std::smatch regex_result;
     if (std::regex_match(frame, regex_result, match))
     {
@@ -153,10 +152,9 @@ size_t RedisProtocol::parse_err_string(
     return 0;
 }
 
-size_t RedisProtocol::parse_number_item(
-  const std::string &frame, std::string &result)
+size_t RedisProtocol::parse_number_item(const std::string &frame, std::string &result)
 {
-    std::regex  match(":([0-9]+)\r\n");
+    std::regex match(":([0-9]+)\r\n");
     std::smatch regex_result;
     if (std::regex_match(frame, regex_result, match))
     {
@@ -169,10 +167,9 @@ size_t RedisProtocol::parse_number_item(
     return 0;
 }
 
-size_t RedisProtocol::parse_bulk_string(
-  const std::string &frame, std::string &result)
+size_t RedisProtocol::parse_bulk_string(const std::string &frame, std::string &result)
 {
-    std::regex  match("\\$(\\d+|-1)\r\n([^\r\n]+)\r\n");
+    std::regex match("\\$(\\d+|-1)\r\n([^\r\n]+)\r\n");
     std::smatch regex_result;
     if (std::regex_match(frame, regex_result, match))
     {
@@ -182,8 +179,7 @@ size_t RedisProtocol::parse_bulk_string(
             result = "nil";
         else
             result = regex_result[2].str();
-        return 5 + result.size() +
-               regex_result[1].str().size(); // header+ len(strlen) + 2*CRLF
+        return 5 + result.size() + regex_result[1].str().size(); // header+ len(strlen) + 2*CRLF
     }
 
     return 0;

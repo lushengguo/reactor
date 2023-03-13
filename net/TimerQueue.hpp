@@ -14,10 +14,10 @@ class TimerQueue : private noncopyable
 {
   public:
     typedef std::function<void()> TimerTaskCallback;
-    typedef int                   TimerId;
+    typedef int TimerId;
     typedef struct
     {
-        bool              periodical_;
+        bool periodical_;
         TimerTaskCallback cb;
     } TimerTaskRecord;
     typedef std::unordered_map<TimerId, TimerTaskRecord> TimerMap;
@@ -35,11 +35,11 @@ class TimerQueue : private noncopyable
 
   private:
     TimerId create_TimerId() const;
-    bool    periodical(TimerId id) const;
+    bool periodical(TimerId id) const;
     TimerId create_timer_event(TimerId id, const TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after);
 
   private:
-    TimerMap   timerMap_;
+    TimerMap timerMap_;
     EventLoop *loop_;
 };
 } // namespace reactor

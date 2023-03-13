@@ -11,9 +11,7 @@ class DateClient
   public:
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
     {
-        log_trace("recv data:%s, len=%d",
-          buffer.read_all_as_string().data(),
-          buffer.readable_bytes());
+        log_trace("recv data:%s, len=%d", buffer.read_all_as_string().data(), buffer.readable_bytes());
         buffer.retrive_all();
     }
 
@@ -35,12 +33,11 @@ int main(int argc, char **argv)
     }
 
     DateClient *date = new DateClient;
-    EventLoop   loop;
-    INetAddr    addr(argv[1], atoi(argv[2]));
-    TcpClient   client(&loop, addr, "DateClient");
+    EventLoop loop;
+    INetAddr addr(argv[1], atoi(argv[2]));
+    TcpClient client(&loop, addr, "DateClient");
 
-    client.set_onMessageCallback(
-      std::bind(&DateClient::onMessage, date, _1, _2, _3));
+    client.set_onMessageCallback(std::bind(&DateClient::onMessage, date, _1, _2, _3));
 
     client.start();
     loop.loop();

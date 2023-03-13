@@ -1,18 +1,11 @@
-#include "net/Epoller.hpp"
 #include "net/EventLoop.hpp"
+#include "net/Epoller.hpp"
 #include "net/TcpConnection.hpp"
 #include <sys/epoll.h>
 
 namespace reactor
 {
-EventLoop::EventLoop()
-  : poller_(new Poller(this)),
-    tqueue_(new TimerQueue(this)),
-    self_(pthread_self()),
-    looping_(false)
-{
-    pool_.start();
-}
+EventLoop::EventLoop() : poller_(new Poller(this)), tqueue_(new TimerQueue(this)), self_(pthread_self()), looping_(false) { pool_.start(); }
 
 void EventLoop::handle_event(MicroTimeStamp receive_time)
 {
@@ -36,8 +29,7 @@ void EventLoop::handle_event(MicroTimeStamp receive_time)
         //连接事件
         if (connMap_.count(event.data.fd) == 1)
         {
-            connMap_.at(event.data.fd)
-              ->handle_event(event.events, receive_time);
+            connMap_.at(event.data.fd)->handle_event(event.events, receive_time);
         }
     }
 }
@@ -87,15 +79,9 @@ void EventLoop::remove_monitor_object(TcpConnectionPtr conn1)
 
 void EventLoop::assert_in_loop_thread() const { assert(in_loop_thread()); }
 
-EventLoop::TimerId EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
-{
-    return tqueue_->run_at(cb, abs_mtime);
-}
+EventLoop::TimerId EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp abs_mtime) { return tqueue_->run_at(cb, abs_mtime); }
 
-EventLoop::TimerId EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp after)
-{
-    return tqueue_->run_after(cb, after);
-}
+EventLoop::TimerId EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp after) { return tqueue_->run_after(cb, after); }
 
 EventLoop::TimerId EventLoop::run_every(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after)
 {
@@ -183,8 +169,7 @@ void EventLoop::run_in_work_thread(Task &&task)
     else
     {
         MutexLockGuard lock(task_queue_mutex_);
-        task_queue_.emplace_back(
-          [&, this]() { run_in_work_thread(std::move(task)); });
+        task_queue_.emplace_back([&, this]() { run_in_work_thread(std::move(task)); });
     }
 }
 

@@ -7,7 +7,7 @@ using namespace reactor;
 
 int main()
 {
-    EventLoop         loop;
+    EventLoop loop;
     static MicroTimeStamp now = micro_timestamp();
     loop.run_after(
         [&]() {

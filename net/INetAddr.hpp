@@ -32,7 +32,7 @@ class INetAddr
     {
         if (this != &rhs)
         {
-            netip_   = rhs.netip_;
+            netip_ = rhs.netip_;
             netport_ = rhs.netport_;
         }
     }
@@ -41,7 +41,7 @@ class INetAddr
     {
         if (this != &rhs)
         {
-            netip_   = rhs.netip_;
+            netip_ = rhs.netip_;
             netport_ = rhs.netport_;
         }
         return *this;
@@ -73,8 +73,8 @@ class INetAddr
     uint16_t netport() const { return netport_; }
 
   private:
-    uint32_t            netip_;
-    uint16_t            netport_;
+    uint32_t netip_;
+    uint16_t netport_;
 };
 } // namespace reactor
 #endif

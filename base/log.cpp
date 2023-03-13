@@ -19,13 +19,13 @@ namespace reactor
 {
 Logger::Logger()
 {
-    fd_           = -1;
+    fd_ = -1;
     enable_print_ = true;
-    max_roll_     = 10;
-    roll_size_    = 100 * KB;
-    dirname_      = "./log";
-    basename_     = "log.txt";
-    filename_     = dirname_ + "/" + basename_;
+    max_roll_ = 10;
+    roll_size_ = 100 * KB;
+    dirname_ = "./log";
+    basename_ = "log.txt";
+    filename_ = dirname_ + "/" + basename_;
     set_log_directory(dirname_.c_str());
     strip_path_ = dirname_ + "/striplog";
 }
@@ -49,13 +49,11 @@ void Logger::set_log_directory(const char *dir)
     if (!dir && dir[0] != '\0')
         return;
 
-    dirname_  = dir;
+    dirname_ = dir;
     filename_ = dirname_ + "/" + basename_;
     recursion_create_dir(dirname_.c_str());
 
-    int fd = open(filename_.c_str(),
-      O_CREAT | O_WRONLY | O_CLOEXEC | O_APPEND,
-      DEFFILEMODE);
+    int fd = open(filename_.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC | O_APPEND, DEFFILEMODE);
     if (fd < 0)
     {
         perror("open log file failed");
@@ -75,7 +73,7 @@ void Logger::set_log_directory(const char *dir)
 void Logger::append(std::string header, std::string content, Timestamp t)
 {
     MutexLockGuard lock(mutex_);
-    std::string    now;
+    std::string now;
     t == 0 ? now = fmt_timestamp(time(nullptr)) : now = fmt_timestamp(t);
     std::string s(now);
     s.append(" |").append(header).append("| ").append(content).append("\n");
@@ -106,7 +104,7 @@ void Logger::save(std::string content)
 
 void Logger::check_roll()
 {
-    time_t now       = time(nullptr);
+    time_t now = time(nullptr);
     size_t file_size = calc_file_size(filename_.c_str());
     tcflush(fd_, TCOFLUSH);
 
@@ -116,11 +114,7 @@ void Logger::check_roll()
         std::string newname = filename_ + "_" + std::to_string(now);
         if (rename(filename_.c_str(), newname.c_str()) != 0)
         {
-            fprintf(stderr,
-              "rename logfile %s -> %s failed ; msg: %s\n",
-              filename_.c_str(),
-              newname.c_str(),
-              strerror(errno));
+            fprintf(stderr, "rename logfile %s -> %s failed ; msg: %s\n", filename_.c_str(), newname.c_str(), strerror(errno));
             return;
         }
 
@@ -140,8 +134,7 @@ void Logger::remove_roll_out_files() const
         return;
 
     // map对时间戳排序，越早的日志文件排在越前面
-    for (FileMap::const_iterator iter = rfiles.begin(); iter != rfiles.end();
-         ++iter)
+    for (FileMap::const_iterator iter = rfiles.begin(); iter != rfiles.end(); ++iter)
     {
         if (remove(iter->second.c_str()) != 0)
             std::cerr << "remove file error : " << iter->second << std::endl;
@@ -157,7 +150,7 @@ void Logger::remove_roll_out_files() const
 //返回值 键-滚动时间戳 值-文件绝对路径
 Logger::FileMap Logger::rolling_files() const
 {
-    FileMap   rfiles;
+    FileMap rfiles;
     Filenames filenames = get_file_names(dirname_.c_str());
     for (Filename &name : filenames)
     {
@@ -165,8 +158,7 @@ Logger::FileMap Logger::rolling_files() const
         if (index != std::string::npos)
         {
             time_t t = atoi(name.substr(basename_.size() + 1).c_str());
-            rfiles.insert(
-              std::pair<time_t, Filepath>(t, dirname_ + "/" + name));
+            rfiles.insert(std::pair<time_t, Filepath>(t, dirname_ + "/" + name));
         }
     }
 

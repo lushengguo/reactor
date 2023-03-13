@@ -16,10 +16,10 @@ class Thread
 
     Thread(const Func &func) : func_(func), started_(false), tid_(-1) {}
 
-    void    detach();
+    void detach();
     Thread &start();
-    void    join();
-    bool    started() const { return started_; }
+    void join();
+    bool started() const { return started_; }
 
   protected:
     //避免用户调用 做了一层转发
@@ -27,8 +27,8 @@ class Thread
     void run_func();
 
   private:
-    Func      func_;
-    bool      started_;
+    Func func_;
+    bool started_;
     pthread_t tid_;
 };
 } // namespace reactor

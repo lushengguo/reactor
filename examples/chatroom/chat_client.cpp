@@ -12,9 +12,7 @@ namespace reactor
 class ChatClient
 {
   public:
-    ChatClient(EventLoop *loop, INetAddr addr)
-      : client(loop, addr, "ChatClient")
-    {}
+    ChatClient(EventLoop *loop, INetAddr addr) : client(loop, addr, "ChatClient") {}
 
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
     {
@@ -26,10 +24,8 @@ class ChatClient
 
     void start()
     {
-        client.set_onConnectionCallback(
-          std::bind(&ChatClient::onConnection, this, _1));
-        client.set_onMessageCallback(
-          std::bind(&ChatClient::onMessage, this, _1, _2, _3));
+        client.set_onConnectionCallback(std::bind(&ChatClient::onConnection, this, _1));
+        client.set_onMessageCallback(std::bind(&ChatClient::onMessage, this, _1, _2, _3));
         client.start();
     }
 
@@ -39,9 +35,9 @@ class ChatClient
 
   private:
     TcpConnectionPtr conn_;
-    TcpClient        client;
-    Protocal         protocal_;
-    std::string      input_;
+    TcpClient client;
+    Protocal protocal_;
+    std::string input_;
 };
 } // namespace reactor
 
@@ -55,12 +51,14 @@ int main(int argc, char **argv)
     }
 
     disable_log_print();
-    EventLoop  loop;
-    INetAddr   addr(argv[1], atoi(argv[2]));
+    EventLoop loop;
+    INetAddr addr(argv[1], atoi(argv[2]));
     ChatClient client(&loop, addr);
     client.start();
     loop.run_in_work_thread([&]() {
-        while (!client.connection_build()) {}
+        while (!client.connection_build())
+        {
+        }
         while (true)
         {
             std::string line;

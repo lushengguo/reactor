@@ -13,8 +13,7 @@
 #include <unistd.h>
 namespace reactor
 {
-std::string replace_all(
-  std::string_view str, std::string_view from, std::string_view to)
+std::string replace_all(std::string_view str, std::string_view from, std::string_view to)
 {
     std::string s(str);
     if (from.empty() || str.empty())
@@ -34,9 +33,7 @@ bool is_numeric_string(std::string_view s)
     if (s.empty())
         return false;
 
-    return static_cast<size_t>(std::count_if(s.begin(),
-             s.end(),
-             [](unsigned char ch) { return std::isdigit(ch); })) == s.size();
+    return static_cast<size_t>(std::count_if(s.begin(), s.end(), [](unsigned char ch) { return std::isdigit(ch); })) == s.size();
 }
 
 size_t calc_file_size(const char *path)
@@ -62,21 +59,20 @@ int read_file(const char *path, std::string &str)
 {
     if (access(path, F_OK) != 0)
     {
-        fprintf(stderr,
-          "can not open file while reading into string:%s\n",
-          path);
+        fprintf(stderr, "can not open file while reading into string:%s\n", path);
         return -1;
     }
 
     str = "";
     std::ifstream ifile(path);
     if (ifile.fail())
-        fprintf(stderr,
-          "open %s file failed while reading into string\n",
-          path);
+        fprintf(stderr, "open %s file failed while reading into string\n", path);
 
     char ch;
-    while (ifile.get(ch)) { str.append(1, ch); }
+    while (ifile.get(ch))
+    {
+        str.append(1, ch);
+    }
 
     ifile.close();
     return 0;
@@ -95,17 +91,17 @@ void recursion_create_dir(const char *path)
     if (system(str.c_str()) != 0)
     {
         fprintf(stderr,
-          "recursion creat directory=%s error"
-          "check permissions\n",
-          path);
+                "recursion creat directory=%s error"
+                "check permissions\n",
+                path);
     }
 }
 
 std::vector<std::string> get_file_names(const char *dir_path)
 {
     std::vector<std::string> files;
-    DIR *                    dir;
-    struct dirent *          ent;
+    DIR *dir;
+    struct dirent *ent;
     if ((dir = opendir(dir_path)) != NULL)
     {
         /* print all the files and directories within directory */
@@ -120,8 +116,7 @@ std::vector<std::string> get_file_names(const char *dir_path)
     return files;
 }
 
-bool retry_n_times(
-  size_t n, std::function<bool()> func, const char *error_message)
+bool retry_n_times(size_t n, std::function<bool()> func, const char *error_message)
 {
     while (n--)
     {

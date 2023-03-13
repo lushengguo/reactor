@@ -16,7 +16,7 @@ class EventLoop;
 class Poller : private noncopyable
 {
   public:
-    typedef std::vector<epoll_event>     epoll_events;
+    typedef std::vector<epoll_event> epoll_events;
     typedef std::unordered_map<int, int> FdEventMap;
     Poller(EventLoop *loop);
 
@@ -30,10 +30,10 @@ class Poller : private noncopyable
   private:
     constexpr static int NOEVENT = 0;
 
-    int          epoll_fd_;
-    EventLoop *  loop_;
+    int epoll_fd_;
+    EventLoop *loop_;
     epoll_events events_;
-    FdEventMap   feMap_;
+    FdEventMap feMap_;
 };
 
 } // namespace reactor

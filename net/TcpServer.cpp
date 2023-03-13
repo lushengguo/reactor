@@ -1,6 +1,6 @@
+#include "net/TcpServer.hpp"
 #include "base/log.hpp"
 #include "net/TcpConnection.hpp"
-#include "net/TcpServer.hpp"
 #include <assert.h>
 #include <sys/epoll.h>
 
@@ -22,11 +22,8 @@ void TcpServer::accept()
     Socket *newsock = self_connection_->accept();
     if (newsock)
     {
-        log_info("Server %s accept new connection,ip=%s,port=%d,allocate fd=%d",
-          name_.c_str(),
-          newsock->readable_ip().data(),
-          newsock->hostport(),
-          newsock->fd());
+        log_info("Server %s accept new connection,ip=%s,port=%d,allocate fd=%d", name_.c_str(), newsock->readable_ip().data(), newsock->hostport(),
+                 newsock->fd());
         // server类的职责只有这些
         //把用户注册的事件处理方式转发给每一个Connection
         //当事件来临时 TcpConnection调用这些回调处理事件

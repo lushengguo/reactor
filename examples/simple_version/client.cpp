@@ -20,8 +20,8 @@
 #include <unistd.h>
 
 static std::string username;
-static int         fd;
-static int         server_fd;
+static int fd;
+static int server_fd;
 
 std::string readable_time()
 {
@@ -42,8 +42,7 @@ bool set_name(std::string_view username)
     {
         if (!std::isalpha(ch) && !std::isalnum(ch))
         {
-            std::cout << "username should be consist of charactor or number"
-                      << std::endl;
+            std::cout << "username should be consist of charactor or number" << std::endl;
             return false;
         }
     }
@@ -63,8 +62,7 @@ bool set_name(std::string_view username)
         {
             if (strcmp(recv, "#username_valid") == 0)
             {
-                std::cout << "set username success, enjoy your chat"
-                          << std::endl;
+                std::cout << "set username success, enjoy your chat" << std::endl;
                 return true;
             }
             else if (strcmp(recv, "#username_exist") == 0)
@@ -93,12 +91,7 @@ bool set_name(std::string_view username)
 void post_message(std::string_view message)
 {
     char buffer[message.size() + 100];
-    int  mlen = snprintf(buffer,
-      message.size() + 100,
-      "[%s]%s:%s",
-      readable_time().c_str(),
-      username.c_str(),
-      message.data());
+    int mlen = snprintf(buffer, message.size() + 100, "[%s]%s:%s", readable_time().c_str(), username.c_str(), message.data());
 
     int total = 0;
     while (total != mlen)
@@ -128,10 +121,10 @@ void chat_client(std::string_view ip, int port)
     assert(fd > 0);
 
     sockaddr_in server_addr;
-    size_t      server_len = sizeof server_addr;
+    size_t server_len = sizeof server_addr;
     bzero(&server_addr, server_len);
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port   = htobe16(port);
+    server_addr.sin_port = htobe16(port);
     inet_pton(AF_INET, ip.data(), &server_addr.sin_addr);
 
     server_fd = connect(fd, (sockaddr *)&server_addr, server_len);
@@ -170,7 +163,7 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    std::string ip   = argv[1];
-    int         port = atoi(argv[2]);
+    std::string ip = argv[1];
+    int port = atoi(argv[2]);
     chat_client(ip, port);
 }

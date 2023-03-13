@@ -3,11 +3,10 @@
 
 namespace reactor
 {
-Protocal::Cmd Protocal::server_parse_message(
-  const std::string &raw_message, std::string &extra_message)
+Protocal::Cmd Protocal::server_parse_message(const std::string &raw_message, std::string &extra_message)
 {
-    std::regex  without_message("//([a-z]+)\\s*");
-    std::regex  regex_with_message("//([a-z]+)\\s+((\\w+))");
+    std::regex without_message("//([a-z]+)\\s*");
+    std::regex regex_with_message("//([a-z]+)\\s+((\\w+))");
     std::smatch regex_result;
     if (std::regex_match(raw_message, regex_result, without_message))
     {
@@ -66,19 +65,32 @@ std::string Protocal::cmd_to_string(Cmd cmd)
 {
     switch (cmd)
     {
-    case kSetName: return "SetName";
-    case kRequestHelp: return "RequestHelp";
-    case kCreateChatRoom: return "CreateChatRoom";
-    case kViewChatRoomMember: return "ViewChatRoomMember";
-    case kViewAllChatRoom: return "ViewAllChatRoom";
-    case kViewOnlineUser: return "ViewOnlineUser";
-    case kEnterChatRoom: return "EnterChatRoom";
-    case kChatWithUser: return "ChatWithUser";
-    case kQuitChat: return "QuitChat";
-    case kMessage: return "Message";
-    case kPosition: return "Position";
-    case kError: return "Error";
-    default: return "InvalidCmd";
+    case kSetName:
+        return "SetName";
+    case kRequestHelp:
+        return "RequestHelp";
+    case kCreateChatRoom:
+        return "CreateChatRoom";
+    case kViewChatRoomMember:
+        return "ViewChatRoomMember";
+    case kViewAllChatRoom:
+        return "ViewAllChatRoom";
+    case kViewOnlineUser:
+        return "ViewOnlineUser";
+    case kEnterChatRoom:
+        return "EnterChatRoom";
+    case kChatWithUser:
+        return "ChatWithUser";
+    case kQuitChat:
+        return "QuitChat";
+    case kMessage:
+        return "Message";
+    case kPosition:
+        return "Position";
+    case kError:
+        return "Error";
+    default:
+        return "InvalidCmd";
     }
 }
 } // namespace reactor

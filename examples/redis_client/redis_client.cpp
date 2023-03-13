@@ -18,9 +18,7 @@ namespace reactor
 class RedisClient : RedisProtocol
 {
   public:
-    RedisClient(EventLoop *loop, std::string_view ip)
-      : client(loop, INetAddr(ip, 6379), "RedisClient")
-    {}
+    RedisClient(EventLoop *loop, std::string_view ip) : client(loop, INetAddr(ip, 6379), "RedisClient") {}
 
     void send(std::string_view cmd)
     {
@@ -30,10 +28,8 @@ class RedisClient : RedisProtocol
 
     void start()
     {
-        client.set_onConnectionCallback(
-          std::bind(&RedisClient::onConnection, this, _1));
-        client.set_onMessageCallback(
-          std::bind(&RedisClient::onMessage, this, _1, _2, _3));
+        client.set_onConnectionCallback(std::bind(&RedisClient::onConnection, this, _1));
+        client.set_onMessageCallback(std::bind(&RedisClient::onMessage, this, _1, _2, _3));
         client.start();
     }
 
@@ -48,9 +44,8 @@ class RedisClient : RedisProtocol
     {
         log_trace("on message callback");
         std::string response;
-        size_t      len = 0;
-        while ((len = parse_response(std::string(buffer.read_all_as_string()),
-                  response)) != 0)
+        size_t len = 0;
+        while ((len = parse_response(std::string(buffer.read_all_as_string()), response)) != 0)
         {
             std::cout << response << std::endl;
             buffer.retrive(len);
@@ -58,7 +53,7 @@ class RedisClient : RedisProtocol
     }
 
   private:
-    TcpClient        client;
+    TcpClient client;
     TcpConnectionPtr conn_;
 };
 } // namespace reactor
@@ -72,7 +67,7 @@ int main(int argc, char **argv)
     }
 
     // disable_log_print();
-    EventLoop   loop;
+    EventLoop loop;
     RedisClient client(&loop, argv[1]);
     client.start();
     // read from standard input as cmd

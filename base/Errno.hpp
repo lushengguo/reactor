@@ -15,7 +15,7 @@ class ErrorCode
     operator bool() { return err_ == 0; }
 
     std::string str() const { return strerror(err_); }
-    bool        EAgain() { return err_ == EAGAIN; }
+    bool EAgain() { return err_ == EAGAIN; }
 
   private:
     int err_;

@@ -1,8 +1,8 @@
+#include "net/TcpConnection.hpp"
 #include "base/Buffer.hpp"
 #include "base/Errno.hpp"
 #include "base/log.hpp"
 #include "net/EventLoop.hpp"
-#include "net/TcpConnection.hpp"
 #include <sys/epoll.h>
 #include <unistd.h>
 
@@ -10,19 +10,11 @@ using namespace std::placeholders;
 namespace reactor
 {
 TcpConnection::TcpConnection(EventLoop *loop, Socket &&socket)
-  : writing_(false),
-    server_mode_(false),
-    state_(kConnected),
-    loop_(loop),
-    sock_(std::move(socket))
-{}
-
-TcpConnection::~TcpConnection()
+    : writing_(false), server_mode_(false), state_(kConnected), loop_(loop), sock_(std::move(socket))
 {
-    log_info("close connection with ip=%s,port=%d",
-      sock_.readable_ip().data(),
-      sock_.hostport());
 }
+
+TcpConnection::~TcpConnection() { log_info("close connection with ip=%s,port=%d", sock_.readable_ip().data(), sock_.hostport()); }
 
 void TcpConnection::send(std::string_view m) { send(m.data(), m.size()); }
 
@@ -70,10 +62,7 @@ void TcpConnection::send(const char *buf, size_t len)
     }
 }
 
-void TcpConnection::remove_self_in_loop()
-{
-    loop_->remove_monitor_object(shared_from_this());
-}
+void TcpConnection::remove_self_in_loop() { loop_->remove_monitor_object(shared_from_this()); }
 
 void TcpConnection::shutdown()
 {
@@ -123,7 +112,7 @@ void TcpConnection::handle_read(MicroTimeStamp receive_time)
     else
     {
         char buffer[65535];
-        int  r = sock_.read(buffer, 65535);
+        int r = sock_.read(buffer, 65535);
 
         if (r > 0)
         {
@@ -158,10 +147,8 @@ void TcpConnection::handle_write()
     //主线程负责写暂存未发送出去的内容 send函数只是负责发一次
     //全部发完由回调处理
     log_debug("write buffer non-empty,send in write event handler");
-    log_debug("data in write buffer:[%s]",
-      write_buffer_.read_all_as_string().data());
-    int r = sock_.write(write_buffer_.readable_data(),
-      write_buffer_.readable_bytes());
+    log_debug("data in write buffer:[%s]", write_buffer_.read_all_as_string().data());
+    int r = sock_.write(write_buffer_.readable_data(), write_buffer_.readable_bytes());
     log_debug("send %d bytes in write event handler", r);
 
     if (r >= 0)
@@ -170,8 +157,7 @@ void TcpConnection::handle_write()
         write_buffer_.retrive(sr);
         if (sr == write_buffer_.readable_bytes())
         {
-            loop_->run_in_work_thread(
-              std::bind(onWriteCompleteCallback_, shared_from_this()));
+            loop_->run_in_work_thread(std::bind(onWriteCompleteCallback_, shared_from_this()));
             disable_write();
         }
     }

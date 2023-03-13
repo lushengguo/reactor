@@ -35,11 +35,9 @@ class RedisProtocol
     // return -1 if find nothing else return index of header
     int find_header(const std::string &frame, ResponseType &type);
 
-    size_t generic_parse(
-      const std::string &frame, std::string &result, ResponseType type);
+    size_t generic_parse(const std::string &frame, std::string &result, ResponseType type);
 
-    size_t parse_simple_string_item(
-      const std::string &frame, std::string &result);
+    size_t parse_simple_string_item(const std::string &frame, std::string &result);
     size_t parse_array_item(const std::string &frame, std::string &result);
     size_t parse_err_string(const std::string &frame, std::string &result);
     size_t parse_number_item(const std::string &frame, std::string &result);

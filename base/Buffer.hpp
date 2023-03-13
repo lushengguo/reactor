@@ -13,7 +13,7 @@ class Buffer
     Buffer() : windex_(0), rindex_(0), max_unread_(default_max_unread_) {}
 
     const char *readable_data() const { return buffer_.data() + rindex_; }
-    size_t      readable_bytes() const { return windex_ - rindex_; }
+    size_t readable_bytes() const { return windex_ - rindex_; }
 
     //丢数据
     void retrive(std::size_t n);
@@ -21,13 +21,9 @@ class Buffer
 
     //往buffer里读写
     std::string_view string(size_t n) const;
-    std::string_view read_all_as_string() const
-    {
-        return std::string_view(string(readable_bytes()));
-    }
+    std::string_view read_all_as_string() const { return std::string_view(string(readable_bytes())); }
 
-    template <typename Tp>
-    void append(Tp *p, size_t n)
+    template <typename Tp> void append(Tp *p, size_t n)
     {
         make_space_for_write(n * sizeof(Tp));
         memcpy(buffer_.data() + windex_, p, n * sizeof(Tp));
@@ -42,7 +38,7 @@ class Buffer
     void swap(Buffer &rhs);
 
   private:
-    void   make_space_for_write(size_t n);
+    void make_space_for_write(size_t n);
     size_t writeable_bytes() const { return buffer_.size() - windex_; }
 
   private:

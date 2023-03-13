@@ -11,27 +11,25 @@ class ThreadPool
 {
   public:
     typedef std::function<void()> Task;
-    ThreadPool(size_t max_task = 20, int thread_num = 10)
-      : task_size_(max_task), thread_num_(thread_num), started_(false)
-    {}
+    ThreadPool(size_t max_task = 20, int thread_num = 10) : task_size_(max_task), thread_num_(thread_num), started_(false) {}
 
     size_t thread_num() const { return thread_num_; }
-    void   start();
-    bool   add_task(const Task &task);
-    bool   add_task(Task &&task);
-    bool   started() const { return started_; }
+    void start();
+    bool add_task(const Task &task);
+    bool add_task(Task &&task);
+    bool started() const { return started_; }
 
   private:
-    void   run_in_thread();
+    void run_in_thread();
     size_t task_size_;
     size_t thread_num_;
 
-    Mutex                 task_queue_mutex_;
-    Mutex                 cond_mutex_;
-    Condition             compete_cond_;
+    Mutex task_queue_mutex_;
+    Mutex cond_mutex_;
+    Condition compete_cond_;
     std::vector<Thread *> threads_;
-    std::deque<Task>      tasks_;
-    bool                  started_;
+    std::deque<Task> tasks_;
+    bool started_;
 };
 } // namespace reactor
 

@@ -1,5 +1,5 @@
-#include "base/log.hpp"
 #include "net/Epoller.hpp"
+#include "base/log.hpp"
 #include "net/EventLoop.hpp"
 #include <assert.h>
 #include <errno.h>
@@ -43,7 +43,7 @@ void Poller::remove_monitor_object(int fd)
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
-    e.events  = NOEVENT;
+    e.events = NOEVENT;
     feMap_.erase(fd);
     int r = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, &e);
     if (r != 0)
@@ -56,16 +56,13 @@ void Poller::new_monitor_object(int fd, int ievent)
 {
     assert(feMap_.count(fd) == 0);
     epoll_event e;
-    e.data.fd  = fd;
-    e.events   = ievent;
+    e.data.fd = fd;
+    e.events = ievent;
     feMap_[fd] = ievent;
-    int r      = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &e);
+    int r = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &e);
     if (r != 0)
     {
-        log_warn("add fd to poller failed,fd=%d,ievent=%d:%s",
-          fd,
-          ievent,
-          strerror(errno));
+        log_warn("add fd to poller failed,fd=%d,ievent=%d:%s", fd, ievent, strerror(errno));
     }
 }
 
@@ -74,8 +71,8 @@ void Poller::modify_monitor_object(int fd, int ievent)
     assert(feMap_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
-    e.events  = ievent;
-    int r     = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &e);
+    e.events = ievent;
+    int r = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &e);
     if (r != 0)
     {
         log_warn("modify fd in poller failed:%s", strerror(errno));

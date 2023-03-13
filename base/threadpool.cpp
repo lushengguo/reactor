@@ -1,5 +1,5 @@
-#include "base/log.hpp"
 #include "base/threadpool.hpp"
+#include "base/log.hpp"
 
 using namespace reactor;
 void ThreadPool::run_in_thread()
@@ -73,8 +73,7 @@ void ThreadPool::start()
 
     for (size_t i = 0; i < thread_num_; i++)
     {
-        threads_.emplace_back(
-          new Thread(std::bind(&ThreadPool::run_in_thread, this)));
+        threads_.emplace_back(new Thread(std::bind(&ThreadPool::run_in_thread, this)));
         threads_[i]->start();
     }
     started_ = true;

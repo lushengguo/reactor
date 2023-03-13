@@ -10,10 +10,7 @@ namespace reactor
 class Condition
 {
   public:
-    Condition() : mutex_(new Mutex())
-    {
-        assert(pthread_cond_init(&cond_, nullptr) == 0);
-    }
+    Condition() : mutex_(new Mutex()) { assert(pthread_cond_init(&cond_, nullptr) == 0); }
     ~Condition()
     {
         delete mutex_;
@@ -35,7 +32,7 @@ class Condition
     void signal() { assert(pthread_cond_signal(&cond_) == 0); }
 
   private:
-    Mutex *        mutex_;
+    Mutex *mutex_;
     pthread_cond_t cond_;
 };
 } // namespace reactor

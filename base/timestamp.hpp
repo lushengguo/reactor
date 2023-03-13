@@ -10,7 +10,7 @@ typedef time_t Timestamp;
 
 // time
 std::string fmt_timestamp(time_t t);
-time_t      reverse_fmt_timestamp(const char *tstring);
+time_t reverse_fmt_timestamp(const char *tstring);
 std::string readable_current_time();
 
 inline MicroTimeStamp micro_timestamp()

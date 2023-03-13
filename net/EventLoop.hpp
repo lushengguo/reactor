@@ -18,17 +18,17 @@ namespace reactor
 class Poller;
 class TcpConnection;
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
-typedef std::weak_ptr<TcpConnection>   TcpConnectionWeakPtr;
+typedef std::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
 
 //所有接口都是线程安全的 如果线程不安全程序会直接abort并且告知错误行为
 //不会产生UB
 class EventLoop : private noncopyable
 {
   public:
-    typedef std::function<void()>           Task;
+    typedef std::function<void()> Task;
     typedef std::map<int, TcpConnectionPtr> ConnectionMap;
-    typedef std::deque<Task>                TaskQueue;
-    using TimerId           = TimerQueue::TimerId;
+    typedef std::deque<Task> TaskQueue;
+    using TimerId = TimerQueue::TimerId;
     using TimerTaskCallback = TimerQueue::TimerTaskCallback;
 
     EventLoop();
@@ -64,14 +64,14 @@ class EventLoop : private noncopyable
     void handle_event(MicroTimeStamp);
 
   private:
-    Poller *      poller_;
-    TimerQueue *  tqueue_;
-    pthread_t     self_;
-    bool          looping_;
-    ThreadPool    pool_;
+    Poller *poller_;
+    TimerQueue *tqueue_;
+    pthread_t self_;
+    bool looping_;
+    ThreadPool pool_;
     ConnectionMap connMap_;
-    TaskQueue     task_queue_;
-    Mutex         task_queue_mutex_;
+    TaskQueue task_queue_;
+    Mutex task_queue_mutex_;
 };
 } // namespace reactor
 #endif

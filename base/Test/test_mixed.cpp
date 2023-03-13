@@ -6,7 +6,7 @@ using namespace reactor;
 bool test_replace_all()
 {
     std::string s("abcdefgh\r\n");
-    auto        s2 = replace_all(s, "abcdefg", "");
+    auto s2 = replace_all(s, "abcdefg", "");
     if (s2 != "h\r\n")
         return false;
 

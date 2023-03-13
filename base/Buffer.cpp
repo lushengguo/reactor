@@ -26,10 +26,7 @@ std::string_view Buffer::string(size_t n) const
 
 void Buffer::append(std::string_view s) { append(s.data(), s.size()); }
 
-void Buffer::append(const Buffer &buffer)
-{
-    append(buffer.read_all_as_string());
-}
+void Buffer::append(const Buffer &buffer) { append(buffer.read_all_as_string()); }
 
 void Buffer::swap(Buffer &rhs)
 {
@@ -46,16 +43,12 @@ void Buffer::make_space_for_write(size_t n)
     }
     else if (buffer_.size() - readable_bytes() >= n) //挪一下就能有地方
     {
-        std::copy(buffer_.begin() + rindex_,
-          buffer_.begin() + windex_,
-          buffer_.begin());
+        std::copy(buffer_.begin() + rindex_, buffer_.begin() + windex_, buffer_.begin());
     }
     else //申请新空间 预留两倍n
     {
         std::vector<char> tmp(readable_bytes() + 2 * n);
-        std::copy(buffer_.begin() + rindex_,
-          buffer_.begin() + windex_,
-          tmp.begin());
+        std::copy(buffer_.begin() + rindex_, buffer_.begin() + windex_, tmp.begin());
         buffer_.swap(tmp);
         windex_ = readable_bytes();
         rindex_ = 0;

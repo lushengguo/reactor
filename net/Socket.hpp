@@ -19,12 +19,12 @@ class Socket : private noncopyable
     Socket(Socket &&rhs);
     ~Socket();
 
-    bool    bind(const INetAddr &);
-    bool    listen() const;
+    bool bind(const INetAddr &);
+    bool listen() const;
     Socket *accept() const;
-    bool    connect(const INetAddr &) const;
-    int     read(char *buffer, size_t max);
-    int     write(const char *buffer, size_t send_len);
+    bool connect(const INetAddr &) const;
+    int read(char *buffer, size_t max);
+    int write(const char *buffer, size_t send_len);
 
     void set_tcp_nodelay();
     void set_nonblock();
@@ -35,7 +35,7 @@ class Socket : private noncopyable
 
     std::string readable_ip() { return self_endpoint_.readable_ip(); }
     std::string peer_addr() { return self_endpoint_.peer_addr(); }
-    uint16_t         hostport() { return self_endpoint_.hostport(); }
+    uint16_t hostport() { return self_endpoint_.hostport(); }
 
   private:
     // for return new connection info
@@ -45,8 +45,8 @@ class Socket : private noncopyable
     constexpr static int default_backlog_ = 1024;
 
     INetAddr self_endpoint_;
-    int      backlog_;
-    int      fd_;
+    int backlog_;
+    int fd_;
 };
 
 } // namespace reactor

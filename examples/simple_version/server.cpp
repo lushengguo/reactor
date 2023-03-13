@@ -107,8 +107,8 @@ void chat_server(int port)
 
     sockaddr_in saddr;
     bzero(&saddr, sizeof saddr);
-    saddr.sin_family      = AF_INET;
-    saddr.sin_port        = htobe16(port);
+    saddr.sin_family = AF_INET;
+    saddr.sin_port = htobe16(port);
     saddr.sin_addr.s_addr = htobe64(INADDR_ANY);
     int ret = bind(server_fd, (const sockaddr *)&saddr, sizeof saddr);
     assert(ret == 0);
@@ -121,12 +121,11 @@ void chat_server(int port)
     epoll_event event;
     event.events |= EPOLLIN;
     event.data.fd = server_fd;
-    ret           = epoll_ctl(epollfd, EPOLL_CTL_ADD, server_fd, &event);
+    ret = epoll_ctl(epollfd, EPOLL_CTL_ADD, server_fd, &event);
     assert(ret == 0);
     while (true)
     {
-        int active_num =
-          epoll_wait(epollfd, active_events.data(), active_events.size(), 10);
+        int active_num = epoll_wait(epollfd, active_events.data(), active_events.size(), 10);
         if (active_num > 0)
         {
             for (int i = 0; i < active_num; ++i)
@@ -136,22 +135,20 @@ void chat_server(int port)
                 if (active_fd == server_fd)
                 {
                     sockaddr_in peer_addr;
-                    socklen_t   peer_len = sizeof peer_addr;
+                    socklen_t peer_len = sizeof peer_addr;
                     bzero(&peer_addr, peer_len);
-                    int peer_fd =
-                      accept(server_fd, (sockaddr *)&peer_addr, &peer_len);
+                    int peer_fd = accept(server_fd, (sockaddr *)&peer_addr, &peer_len);
                     printf("new connection\n");
                     epoll_event peer_event;
                     peer_event.data.fd = peer_fd;
                     peer_event.events |= EPOLLIN;
-                    ret =
-                      epoll_ctl(epollfd, EPOLL_CTL_ADD, peer_fd, &peer_event);
+                    ret = epoll_ctl(epollfd, EPOLL_CTL_ADD, peer_fd, &peer_event);
                     assert(ret == 0);
                 }
                 else // user's message
                 {
                     char message[1000];
-                    int  rlen     = read(active_fd, message, 999);
+                    int rlen = read(active_fd, message, 999);
                     message[rlen] = 0;
                     if (rlen > 0)
                     {

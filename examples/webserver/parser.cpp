@@ -8,12 +8,10 @@ namespace WebServer
 Parser::ParseCode Parser::parse_request(std::string_view line) {}
 Parser::ParseCode Parser::parse_header(std::string_view line) {}
 
-Parser::ParseCode Parser::parse_body(
-  std::string_view line, Parser::Request &request)
+Parser::ParseCode Parser::parse_body(std::string_view line, Parser::Request &request)
 {
     std::string line1(line);
-    std::regex  re(
-      "(GET|POST|PUT)\\s+(/[a-z0-9A-Z/_]+|\\*)\\s*HTTP/(0.9|1.0|1.1)\\s*");
+    std::regex re("(GET|POST|PUT)\\s+(/[a-z0-9A-Z/_]+|\\*)\\s*HTTP/(0.9|1.0|1.1)\\s*");
     std::smatch match;
     if (std::regex_match(line1, match, re))
     {

@@ -5,7 +5,8 @@
 namespace reactor
 {
 class TimerWheel
-{};
+{
+};
 } // namespace reactor
 
 #endif

@@ -20,6 +20,9 @@ int main()
     thread_poll.start();
     int task_num = 25;
     log_trace("main thread tid=%ld", pthread_self());
-    while (task_num--) thread_poll.add_task(std::bind(func, "test_thread", 10));
-    while (true) {}
+    while (task_num--)
+        thread_poll.add_task(std::bind(func, "test_thread", 10));
+    while (true)
+    {
+    }
 }

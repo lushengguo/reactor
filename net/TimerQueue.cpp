@@ -1,5 +1,5 @@
-#include "net/EventLoop.hpp"
 #include "net/TimerQueue.hpp"
+#include "net/EventLoop.hpp"
 #include <assert.h>
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
@@ -32,16 +32,14 @@ TimerQueue::TimerId TimerQueue::run_at(const TimerTaskCallback &cb, MicroTimeSta
 TimerQueue::TimerId TimerQueue::run_after(const TimerTaskCallback &cb, MicroTimeStamp after)
 {
     TimerId id = create_TimerId();
-    loop_->run_in_loop_thread(
-      std::bind(&TimerQueue::create_timer_event, this, id, cb, 0, after));
+    loop_->run_in_loop_thread(std::bind(&TimerQueue::create_timer_event, this, id, cb, 0, after));
     return id;
 }
 
 TimerQueue::TimerId TimerQueue::run_every(const TimerTaskCallback &cb, MicroTimeStamp after, MicroTimeStamp period)
 {
     TimerId id = create_TimerId();
-    loop_->run_in_loop_thread(
-      std::bind(&TimerQueue::create_timer_event, this, id, cb, period, after));
+    loop_->run_in_loop_thread(std::bind(&TimerQueue::create_timer_event, this, id, cb, period, after));
     return id;
 }
 
@@ -69,16 +67,12 @@ TimerQueue::TimerId TimerQueue::create_timer_event(TimerId id, const TimerTaskCa
     loop_->assert_in_loop_thread();
 
     itimerspec ispec;
-    ispec.it_interval.tv_sec  = period / 1000;
+    ispec.it_interval.tv_sec = period / 1000;
     ispec.it_interval.tv_nsec = (period % 1000) * 1000000;
-    ispec.it_value.tv_sec     = after / 1000;
-    ispec.it_value.tv_nsec    = (after % 1000) * 1000000;
-    log_trace(
-      "new timer event will be called after %ld.%09lds, period=%ld.%09lds",
-      ispec.it_value.tv_sec,
-      ispec.it_value.tv_nsec,
-      ispec.it_interval.tv_sec,
-      ispec.it_interval.tv_nsec);
+    ispec.it_value.tv_sec = after / 1000;
+    ispec.it_value.tv_nsec = (after % 1000) * 1000000;
+    log_trace("new timer event will be called after %ld.%09lds, period=%ld.%09lds", ispec.it_value.tv_sec, ispec.it_value.tv_nsec,
+              ispec.it_interval.tv_sec, ispec.it_interval.tv_nsec);
 
     if (timerfd_settime(id, 0, &ispec, nullptr) == -1)
     {
@@ -108,7 +102,7 @@ void TimerQueue::handle_event(TimerId id, int event)
     assert(event & EPOLLIN);
 
     size_t val;
-    int    r = ::read(id, &val, sizeof val);
+    int r = ::read(id, &val, sizeof val);
     assert(r == sizeof val);
 
     TimerTaskCallback cb = timerMap_.at(id).cb;
