@@ -15,7 +15,7 @@ class WebServer : private noncopyable
 
         if (status == kValidRequest)
         {
-            std::string response = router_.response(buffer.readable_data(), buffer.readable_bytes());
+            std::string response = router_.response(buffer.readable_data(), buffer.readable_bytes_len());
             conn->send(response.data(), response.size());
             buffer.retrive_all();
         }

@@ -38,16 +38,16 @@ struct __attribute__((__packed__)) Request
 
 enum class Cmd
 {
-    CONNECT = 0x01,
-    BIND = 0x02,
-    UDP = 0x03
+    kConnect = 0x01,
+    kBind = 0x02,
+    kUdp = 0x03
 };
 
 enum class AddressType
 {
-    Ipv4 = 0x01,
-    Domainname = 0x03,
-    Ipv6 = 0x04
+    kIpv4 = 0x01,
+    kDomainname = 0x03,
+    kIpv6 = 0x04
 };
 
 struct __attribute__((__packed__)) Reply

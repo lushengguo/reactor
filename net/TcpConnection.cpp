@@ -28,7 +28,7 @@ void TcpConnection::send(const char *buf, size_t len)
     //而且解决了读写同步问题
     if (loop_->in_loop_thread())
     {
-        if (write_buffer_.readable_bytes() == 0)
+        if (write_buffer_.readable_bytes_len() == 0)
         {
             int r = sock_.write(buf, len);
             log_trace("write %d bytes to fd=%d", r, sock_.fd());
@@ -138,7 +138,7 @@ void TcpConnection::handle_write()
 {
     assert(writing());
     MutexLockGuard lock(wr_buffer_mutex_);
-    if (write_buffer_.readable_bytes() == 0)
+    if (write_buffer_.readable_bytes_len() == 0)
     {
         disable_write();
         return;
@@ -148,14 +148,14 @@ void TcpConnection::handle_write()
     //全部发完由回调处理
     log_debug("write buffer non-empty,send in write event handler");
     log_debug("data in write buffer:[%s]", write_buffer_.read_all_as_string().data());
-    int r = sock_.write(write_buffer_.readable_data(), write_buffer_.readable_bytes());
+    int r = sock_.write(write_buffer_.readable_data(), write_buffer_.readable_bytes_len());
     log_debug("send %d bytes in write event handler", r);
 
     if (r >= 0)
     {
         size_t sr = r;
         write_buffer_.retrive(sr);
-        if (sr == write_buffer_.readable_bytes())
+        if (sr == write_buffer_.readable_bytes_len())
         {
             loop_->run_in_work_thread(std::bind(onWriteCompleteCallback_, shared_from_this()));
             disable_write();
@@ -170,7 +170,7 @@ void TcpConnection::handle_write()
 //对方半关闭连接后调用这个函数 应该把要发的数据发完本端再关闭连接
 void TcpConnection::handle_close()
 {
-    if (write_buffer_.readable_bytes() == 0)
+    if (write_buffer_.readable_bytes_len() == 0)
     {
         remove_self_in_loop();
         if (onCloseCallback_)

@@ -1,41 +1,149 @@
 #include "base/log.hpp"
+#include "base/mixed.hpp"
+#include "examples/socks5/socks_protocol.hpp"
 #include "net/EventLoop.hpp"
 #include "net/TcpClient.hpp"
+#include "net/TcpConnection.hpp"
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <string_view>
-namespace reactor
+//长连接 要求客户端关闭连接时能检测到
+using namespace reactor;
+using namespace socks5;
+using namespace std::placeholders;
+
+namespace socks5
 {
 class EchoClient
 {
   public:
+    EchoClient(const char *echo_server_ip, uint16_t echo_server_port)
+        : echo_server_ip_(echo_server_ip), echo_server_port_(echo_server_port)
+    {
+    }
+
+    enum class Status
+    {
+        kHandshaking,
+        kRequesting,
+        kRelaying
+    };
+
+    void sendRequest(TcpConnectionPtr conn)
+    {
+        char buffer[sizeof(Request) + 4 + 2];
+        Request *request = (Request *)buffer;
+        request->ver = 5;
+        request->cmd = static_cast<uint8_t>(Cmd::kConnect);
+        request->rsv = 0;
+        request->atyp = static_cast<uint8_t>(AddressType::kIpv4);
+    }
+
+    void sendStdinInput(TcpConnectionPtr conn)
+    {
+        std::string s;
+        std::cin >> s;
+        conn->send(s.c_str(), s.size());
+    }
+
+    void handleHandshake(TcpConnectionPtr conn, Buffer &buffer)
+    {
+        if (buffer.readable_bytes_len() < sizeof(ServerHandshake))
+            return;
+
+        ServerHandshake *handshake = (ServerHandshake *)buffer.readable_data();
+        if (handshake->ver != 5)
+        {
+            log_error("server version(%d) incorrect", handshake->ver);
+            exit(-1);
+        }
+
+        if (handshake->method == static_cast<uint8_t>(Method::kNoAcceptableMethods))
+        {
+            log_error("server handshake return code NoAcceptableMethods");
+            exit(-1);
+        }
+
+        buffer.retrive(sizeof(ServerHandshake));
+        status_ = Status::kRequesting;
+        sendRequest(conn);
+    }
+
+    void handleRequest(TcpConnectionPtr conn, Buffer &buffer)
+    {
+        size_t len = buffer.readable_bytes_len();
+        const size_t port_len = 2;
+        if (len <= sizeof(Reply))
+            return;
+
+        Reply *reply = (Reply *)buffer.readable_data();
+        switch (static_cast<AddressType>(reply->atyp))
+        {
+        case AddressType::kIpv4:
+            if (len <= sizeof(Reply) + 4 + port_len)
+                break;
+            break;
+        case AddressType::kIpv6:
+            if (len <= sizeof(Reply) + 16 + port_len)
+                break;
+            break;
+        case AddressType::kDomainname: {
+            if (len <= sizeof(Reply) + 1 + port_len)
+                break;
+
+            if (buffer.readable_data()[len - port_len] == 0)
+            {
+            }
+
+            break;
+        }
+        default:
+            break;
+        }
+
+        log_info("connection with echo server established");
+        sendStdinInput(conn);
+    }
+
+    void handleEchoData(TcpConnectionPtr conn, Buffer &buffer) {}
+
     //连接建立后主动由client发起数据通讯
     void onConnection(TcpConnectionPtr conn)
     {
-        std::cout << "please input message >> " << std::flush;
-        std::getline(std::cin, s_);
-        conn->send(s_);
+        char buffer[3];
+        ClientHandshake *handshake = (ClientHandshake *)buffer;
+        handshake->ver = 5;
+        handshake->nmethods = 1;
+        handshake->methods[0] = static_cast<uint8_t>(Method::kNoAuthenticationRequired);
+        conn->send(buffer, sizeof(buffer));
     }
 
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
     {
-        std::cout << "recv from server << " << buffer.read_all_as_string().data() << std::endl;
-        buffer.retrive_all();
-
-        std::cout << "please input message >> " << std::flush;
-        std::getline(std::cin, s_);
-        conn->send(s_);
+        switch (status_)
+        {
+        case Status::kHandshaking:
+            handleHandshake(conn, buffer);
+        case Status::kRequesting:
+            handleRequest(conn, buffer);
+        case Status::kRelaying: {
+            handleEchoData(conn, buffer);
+            break;
+        }
+        default:
+            exit(-1);
+        }
     }
 
   private:
-    std::string s_;
+    Status status_ = Status::kHandshaking;
+    const char *echo_server_ip_;
+    uint16_t echo_server_port_;
 };
 
-}; // namespace reactor
+}; // namespace socks5
 
-//长连接 要求客户端关闭连接时能检测到
-using namespace reactor;
-using namespace std::placeholders;
 int main(int argc, char **argv)
 {
     if (argc != 4)
@@ -44,9 +152,23 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    EchoClient *echo = new EchoClient;
+    const char *socks5_server_ip = argv[1];
+    const char *echo_server_ip = argv[2];
+    if (not verify_ipv4(echo_server_ip))
+    {
+        log_error("input ehco server invalid, expect ipv4 format");
+        exit(-1);
+    }
+    uint16_t echo_server_port = atoi(argv[3]);
+    if (not verify_port(echo_server_port))
+    {
+        log_error("input ehco port invalid, expect 0-65535");
+        exit(-1);
+    }
+
+    EchoClient *echo = new EchoClient(echo_server_ip, echo_server_port);
     EventLoop loop;
-    INetAddr addr(argv[1], 1080);
+    INetAddr addr(socks5_server_ip, 1080);
     TcpClient client(&loop, addr, "EchoClient");
 
     client.set_onConnectionCallback(std::bind(&EchoClient::onConnection, echo, _1));
