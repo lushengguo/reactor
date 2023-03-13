@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        log_error("Usage : ./echo-server <port>");
+        log_error("Usage : ./echo_socks5_server <port>");
         exit(-1);
     }
 

@@ -38,11 +38,15 @@ using namespace reactor;
 using namespace std::placeholders;
 int main(int argc, char **argv)
 {
-    // const char* ip = nullptr;
+    if (argc != 4)
+    {
+        log_error("Usage : ./echo_socks5_client <socks5-server-ip> <server-ip> <server-port> ");
+        exit(-1);
+    }
 
     EchoClient *echo = new EchoClient;
     EventLoop loop;
-    INetAddr addr(argv[1], atoi(argv[2]));
+    INetAddr addr(argv[1], 1080);
     TcpClient client(&loop, addr, "EchoClient");
 
     client.set_onConnectionCallback(std::bind(&EchoClient::onConnection, echo, _1));

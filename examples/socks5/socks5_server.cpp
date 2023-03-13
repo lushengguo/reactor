@@ -3,7 +3,7 @@
 #include "net/TcpServer.hpp"
 namespace reactor
 {
-class EchoServer
+class Socks5Server
 {
   public:
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
@@ -21,18 +21,12 @@ using namespace reactor;
 using namespace std::placeholders;
 int main(int argc, char **argv)
 {
-    if (argc != 2)
-    {
-        log_error("Usage : ./echo-server <port>");
-        exit(-1);
-    }
-
-    EchoServer *echo = new EchoServer;
+    Socks5Server *socks5_server = new Socks5Server;
     EventLoop loop;
-    INetAddr addr("", atoi(argv[1]));
-    TcpServer server(&loop, addr, "EchoServer");
+    INetAddr addr("", 1080);
+    TcpServer server(&loop, addr, "Socks5Server");
 
-    server.set_onMessageCallback(std::bind(&EchoServer::onMessage, echo, _1, _2, _3));
+    server.set_onMessageCallback(std::bind(&Socks5Server::onMessage, socks5_server, _1, _2, _3));
 
     server.start();
     loop.loop();
