@@ -9,6 +9,8 @@ find_package(Threads REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR})
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
