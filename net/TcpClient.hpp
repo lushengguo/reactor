@@ -1,4 +1,5 @@
 #pragma once
+#include "net/EventLoop.hpp"
 #ifndef REACTOR_TCPCLIENT_HPP
 #define REACTOR_TCPCLIENT_HPP
 
@@ -22,7 +23,7 @@ class TcpClient : private noncopyable
     using EventCallback = typename TcpConnection::EventCallback;
     using NonInputParamCallback = typename TcpConnection::NonInputParamCallback;
 
-    void start();
+    bool start();
 
     void set_onConnectionCallback(const EventCallback &cb) { onConnectionCallback_ = cb; }
 
@@ -35,6 +36,8 @@ class TcpClient : private noncopyable
     void set_onServerCloseCallback(const NonInputParamCallback &cb) { onServerCloseCallback_ = cb; }
 
     void set_onServerCloseCallback(NonInputParamCallback &&cb) { onServerCloseCallback_ = std::move(cb); }
+
+    TcpConnectionPtr getConn() const { return self_connection_; }
 
     // default
     void onServerCloseCallback();

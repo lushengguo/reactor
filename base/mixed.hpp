@@ -1,5 +1,6 @@
 #pragma once
 #include <regex>
+#include <sstream>
 #ifndef REACTOR_MIXED_HPP
 #define REACTOR_MIXED_HPP
 
@@ -40,7 +41,28 @@ inline bool verify_ipv4(const char *ipv4)
     return regex_match(ipv4, re);
 }
 
-inline bool verify_port(uint16_t port) { return port <= 65535; }
+inline uint32_t ipv4_to_number(const char *ip)
+{
+    if (not verify_ipv4(ip))
+        return -1;
+
+    std::istringstream ss(ip);
+    std::string snum;
+    uint32_t num = 0;
+    while (std::getline(ss, snum, '.'))
+    {
+        num *= 256;
+        num += atoi(snum.c_str());
+    }
+    return num;
+}
+
+inline std::string number_2_ipv4(uint32_t nip)
+{
+    std::stringstream oss;
+    oss << (nip >> 24) << "." << ((nip >> 16) & 0xff) << "." << ((nip >> 8) & 0xff) << "." << (nip & 0xff);
+    return oss.str();
+}
 } // namespace reactor
 
 #endif

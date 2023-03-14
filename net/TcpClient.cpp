@@ -2,12 +2,11 @@
 #include "net/EventLoop.hpp"
 namespace reactor
 {
-void TcpClient::start()
+bool TcpClient::start()
 {
     if (started_)
-        return;
+        return true;
 
-    started_ = true;
     sock_.set_reuse_addr();
 
     if (sock_.connect(server_endpoint_))
@@ -17,7 +16,7 @@ void TcpClient::start()
     else
     {
         log_error("connect server ip=%s port=%d failed:%s", server_endpoint_.readable_ip().data(), server_endpoint_.hostport(), strerror(errno));
-        exit(0);
+        return false;
     }
 
     self_connection_ = std::make_shared<TcpConnection>(loop_, std::move(sock_));
@@ -34,6 +33,10 @@ void TcpClient::start()
         self_connection_->set_onCloseCallback(std::bind(&TcpClient::onServerCloseCallback, this)); // default
     }
     self_connection_->listen_on_read_event();
+
+    started_ = true;
+
+    return true;
 }
 
 void TcpClient::onServerCloseCallback()
