@@ -70,19 +70,14 @@ void Logger::set_log_directory(const char *dir)
     }
 }
 
-void Logger::append(std::string header, std::string content, Timestamp t)
+void Logger::append(::LogLevel level, std::string content)
 {
     MutexLockGuard lock(mutex_);
-    std::string now;
-    t == 0 ? now = fmt_timestamp(time(nullptr)) : now = fmt_timestamp(t);
-    std::string s(now);
-    s.append(" |").append(header).append("| ").append(content).append("\n");
+    std::string s = fmt::format("{} | {} | {}\n", fmt_timestamp(time(nullptr)), level, content);
     print(s);
     // Trace不保存
-    if (strcasestr(header.c_str(), "trace") == nullptr)
-    {
+    if (level != ::LogLevel::Trace)
         save(s);
-    }
 }
 
 void Logger::print(std::string content) const

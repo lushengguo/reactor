@@ -5,7 +5,10 @@
 
 namespace reactor
 {
-EventLoop::EventLoop() : tqueue_(new TimedTaskManager(this)), self_(pthread_self()), looping_(false) { pool_.start(); }
+EventLoop::EventLoop() : tqueue_(new TimedTaskManager(this)), self_(pthread_self()), looping_(false)
+{
+    pool_.start();
+}
 
 void EventLoop::handle_event(MicroTimeStamp receive_time)
 {
@@ -19,14 +22,14 @@ void EventLoop::handle_event(MicroTimeStamp receive_time)
         if (event.events == 0)
             break;
 
-        //判断是否是定时事件
+        // 判断是否是定时事件
         if (tqueue_->contain(event.data.fd))
         {
             tqueue_->handle_event(event.data.fd, event.events);
             continue;
         }
 
-        //连接事件
+        // 连接事件
         if (connMap_.count(event.data.fd) == 1)
         {
             connMap_.at(event.data.fd)->handle_event(event.events, receive_time);
@@ -77,13 +80,23 @@ void EventLoop::remove_monitor_object(TcpConnectionPtr conn1)
     run_in_loop_thread(std::bind(func, conn1));
 }
 
-void EventLoop::assert_in_loop_thread() const { assert(in_loop_thread()); }
+void EventLoop::assert_in_loop_thread() const
+{
+    assert(in_loop_thread());
+}
 
-EventLoop::TimerId EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp abs_mtime) { return tqueue_->run_at(cb, abs_mtime); }
+EventLoop::TimerId EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
+{
+    return tqueue_->run_at(cb, abs_mtime);
+}
 
-EventLoop::TimerId EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp after) { return tqueue_->run_after(cb, after); }
+EventLoop::TimerId EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp after)
+{
+    return tqueue_->run_after(cb, after);
+}
 
-EventLoop::TimerId EventLoop::run_every(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after)
+EventLoop::TimerId EventLoop::run_every(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp period,
+                                        MicroTimeStamp after)
 {
     return tqueue_->run_every(cb, period, after);
 }
@@ -132,7 +145,10 @@ void EventLoop::run_in_loop_thread(Task &&func)
     }
 }
 
-bool EventLoop::in_loop_thread() const { return self_ == pthread_self(); }
+bool EventLoop::in_loop_thread() const
+{
+    return self_ == pthread_self();
+}
 
 void EventLoop::run_buffered_task()
 {

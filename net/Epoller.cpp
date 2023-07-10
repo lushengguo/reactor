@@ -24,9 +24,9 @@ MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
         return micro_timestamp();
 
     int r = ::epoll_wait(epoll_fd_, events_.data(), event_map_.size(), timeout);
-    if (r <= 0)
+    if (r < 0)
     {
-        log_error("epoll error:%s", strerror(errno));
+        log_error("epoll error:%s, epoll_wait return %d, epolling %d fds", strerror(errno), r, events_.size());
     }
     else if (static_cast<size_t>(r) < events_.size())
     {
