@@ -10,7 +10,12 @@ EventLoop::EventLoop() : tqueue_(new TimedTaskManager(this)), self_(pthread_self
     pool_.start();
 }
 
-void EventLoop::handle_event(MicroTimeStamp receive_time)
+EventLoop::~EventLoop()
+{
+    pool_.end();
+}
+
+void EventLoop::handle_event(MilliTimestamp receive_time)
 {
     assert_in_loop_thread();
     auto events = poller_.active_events();
@@ -37,7 +42,7 @@ void EventLoop::handle_event(MicroTimeStamp receive_time)
     }
 }
 
-void EventLoop::loop()
+void EventLoop::loop(MilliTimestamp break_time)
 {
     if (looping_)
         return;
@@ -45,9 +50,11 @@ void EventLoop::loop()
     looping_ = true;
     while (true)
     {
-        MicroTimeStamp receive_time = poller_.epoll(10);
+        MilliTimestamp receive_time = poller_.epoll(10);
         run_buffered_task();
         handle_event(receive_time);
+        if (receive_time >= break_time)
+            return;
     }
 }
 
@@ -85,37 +92,36 @@ void EventLoop::assert_in_loop_thread() const
     assert(in_loop_thread());
 }
 
-EventLoop::TimerId EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
+int EventLoop::run_at(const EventLoop::TimerTaskCallback &cb, MilliTimestamp abs_mtime)
 {
     return tqueue_->run_at(cb, abs_mtime);
 }
 
-EventLoop::TimerId EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp after)
+int EventLoop::run_after(const EventLoop::TimerTaskCallback &cb, MilliTimestamp after)
 {
     return tqueue_->run_after(cb, after);
 }
 
-EventLoop::TimerId EventLoop::run_every(const EventLoop::TimerTaskCallback &cb, MicroTimeStamp period,
-                                        MicroTimeStamp after)
+int EventLoop::run_every(const EventLoop::TimerTaskCallback &cb, MilliTimestamp period, MilliTimestamp after)
 {
-    return tqueue_->run_every(cb, period, after);
+    return tqueue_->run_every(cb, after, period);
 }
 
-void EventLoop::cancel(EventLoop::TimerId id1)
+void EventLoop::cancel(int id1)
 {
-    auto func = [&](TimerId id) { tqueue_->cancel(id); };
+    auto func = [&](int id) { tqueue_->cancel(id); };
     run_in_loop_thread(std::bind(func, id1));
 }
 
-void EventLoop::new_monitor_object(EventLoop::TimerId id1)
+void EventLoop::new_monitor_object(int id1)
 {
-    auto func = [&](TimerId id) { poller_.new_monitor_object(id, EPOLLIN); };
+    auto func = [&](int id) { poller_.new_monitor_object(id, EPOLLIN); };
     run_in_loop_thread(std::bind(func, id1));
 }
 
-void EventLoop::remove_monitor_object(EventLoop::TimerId id1)
+void EventLoop::remove_monitor_object(int id1)
 {
-    auto func = [&](TimerId id) { poller_.remove_monitor_object(id); };
+    auto func = [&](int id) { poller_.remove_monitor_object(id); };
     run_in_loop_thread(std::bind(func, id1));
 }
 

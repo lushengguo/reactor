@@ -10,11 +10,29 @@ class Condition;
 class Mutex
 {
   public:
-    Mutex() { assert(pthread_mutex_init(&mutex_, 0) == 0); }
-    ~Mutex() { assert(pthread_mutex_destroy(&mutex_) == 0); }
+    Mutex()
+    {
+        int r = pthread_mutex_init(&mutex_, 0);
+        assert(r == 0);
+    }
 
-    void lock() { assert(pthread_mutex_lock(&mutex_) == 0); }
-    void unlock() { assert(pthread_mutex_unlock(&mutex_) == 0); }
+    ~Mutex()
+    {
+        int r = pthread_mutex_destroy(&mutex_);
+        assert(r == 0);
+    }
+
+    void lock()
+    {
+        int r = pthread_mutex_lock(&mutex_);
+        assert(r == 0);
+    }
+
+    void unlock()
+    {
+        int r = pthread_mutex_unlock(&mutex_);
+        assert(r == 0);
+    }
 
   protected:
     friend class Condition;

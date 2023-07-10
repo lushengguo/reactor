@@ -73,7 +73,7 @@ void Logger::set_log_directory(const char *dir)
 void Logger::append(::LogLevel level, std::string content)
 {
     MutexLockGuard lock(mutex_);
-    std::string s = fmt::format("{} | {} | {}\n", fmt_timestamp(time(nullptr)), level, content);
+    std::string s = fmt::format("{} | {} | {}\n", readable_current_time(), level, content);
     print(s);
     // Trace不保存
     if (level != ::LogLevel::Trace)

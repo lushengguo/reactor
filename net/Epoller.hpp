@@ -20,7 +20,7 @@ class Poller : private noncopyable
     typedef std::unordered_map<int, int> FdEventMap;
     Poller();
 
-    MicroTimeStamp epoll(MicroTimeStamp timeout);
+    MilliTimestamp epoll(MilliTimestamp timeout);
     const epoll_events &active_events() const { return events_; }
 
     void remove_monitor_object(int fd);

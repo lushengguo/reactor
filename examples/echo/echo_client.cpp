@@ -17,7 +17,7 @@ class EchoClient
         conn->send(s_);
     }
 
-    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
         std::cout << "recv from server << " << buffer.read_all_as_string().data() << std::endl;
         buffer.retrive_all();

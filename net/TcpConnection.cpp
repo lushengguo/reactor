@@ -102,7 +102,7 @@ void TcpConnection::disable_write()
     loop_->update_monitor_object(shared_from_this());
 }
 
-void TcpConnection::handle_read(MicroTimeStamp receive_time)
+void TcpConnection::handle_read(MilliTimestamp receive_time)
 {
     if (server_mode_)
     {
@@ -186,7 +186,7 @@ void TcpConnection::handle_error()
         onCloseCallback_();
 }
 
-void TcpConnection::handle_event(int event, MicroTimeStamp t)
+void TcpConnection::handle_event(int event, MilliTimestamp t)
 {
     if (event & EPOLLERR)
     {

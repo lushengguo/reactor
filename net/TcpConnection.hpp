@@ -32,7 +32,7 @@ class TcpConnection : private noncopyable, public std::enable_shared_from_this<T
     };
 
     typedef std::function<void(TcpConnectionPtr)> EventCallback;
-    typedef std::function<void(TcpConnectionPtr, Buffer &, MicroTimeStamp)> MessageFunc;
+    typedef std::function<void(TcpConnectionPtr, Buffer &, MilliTimestamp)> MessageFunc;
     typedef std::function<void()> NonInputParamCallback;
 
     TcpConnection(EventLoop *, Socket &&);
@@ -56,7 +56,7 @@ class TcpConnection : private noncopyable, public std::enable_shared_from_this<T
 
     void set_interest_event(int event) { interest_event_ = event; }
     int interest_event() const { return interest_event_; }
-    void handle_event(int event, MicroTimeStamp);
+    void handle_event(int event, MilliTimestamp);
 
     void listen_on_read_event();
     void disable_read();
@@ -72,7 +72,7 @@ class TcpConnection : private noncopyable, public std::enable_shared_from_this<T
   private:
     bool writing() const { return writing_; }
 
-    void handle_read(MicroTimeStamp receive_time);
+    void handle_read(MilliTimestamp receive_time);
     void handle_write();
     void handle_error();
     void handle_close();

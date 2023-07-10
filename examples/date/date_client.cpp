@@ -9,7 +9,7 @@ namespace reactor
 class DateClient
 {
   public:
-    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
         log_trace("recv data:%s, len=%d", buffer.read_all_as_string().data(), buffer.readable_bytes_len());
         buffer.retrive_all();

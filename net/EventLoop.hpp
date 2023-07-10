@@ -1,4 +1,5 @@
 #pragma once
+#include <limits>
 #ifndef REACTOR_EVENTLOOP_HPP
 #define REACTOR_EVENTLOOP_HPP
 
@@ -28,40 +29,40 @@ class EventLoop : private noncopyable
     typedef std::function<void()> Task;
     typedef std::map<int, TcpConnectionPtr> ConnectionMap;
     typedef std::deque<Task> TaskQueue;
-    using TimerId = TimedTaskManager::TimerId;
     using TimerTaskCallback = TimedTaskManager::TimerTaskCallback;
 
     EventLoop();
+    ~EventLoop();
 
-    void loop();
+    void loop(MilliTimestamp break_time = std::numeric_limits<MilliTimestamp>::max());
     // abs_mtime如果小于当前时间则不执行
-    TimerId run_at(const TimerTaskCallback &, MicroTimeStamp abs_mtime);
-    TimerId run_after(const TimerTaskCallback &, MicroTimeStamp after);
-    TimerId run_every(const TimerTaskCallback &, MicroTimeStamp period, MicroTimeStamp after);
-    void cancel(TimerId);
+    int run_at(const TimerTaskCallback &, MilliTimestamp abs_mtime);
+    int run_after(const TimerTaskCallback &, MilliTimestamp after);
+    int run_every(const TimerTaskCallback &, MilliTimestamp period, MilliTimestamp after);
+    void cancel(int);
 
     /*以下接口仅内部类调用 用户调用上面的接口*/
   public:
-    //一些事件设计的要在EventLoop所在的线程跑
-    //如果不在这个线程里跑(比如在线程池里)就有可能出现同步问题
+    // 一些事件设计的要在EventLoop所在的线程跑
+    // 如果不在这个线程里跑(比如在线程池里)就有可能出现同步问题
     bool in_loop_thread() const;
-    //在其他线程方法内调用该函数即代表该方法是线程安全的
+    // 在其他线程方法内调用该函数即代表该方法是线程安全的
     void assert_in_loop_thread() const;
 
-    //对于监控事件的解决回调
+    // 对于监控事件的解决回调
     void run_in_work_thread(const Task &task);
     void run_in_work_thread(Task &&task);
     void run_in_loop_thread(const Task &func);
     void run_in_loop_thread(Task &&func);
 
-    //新的监控事件
-    void new_monitor_object(TimerId);
-    void remove_monitor_object(TimerId);
+    // 新的监控事件
+    void new_monitor_object(int);
+    void remove_monitor_object(int);
     void update_monitor_object(TcpConnectionPtr);
     void remove_monitor_object(TcpConnectionPtr);
 
     void run_buffered_task();
-    void handle_event(MicroTimeStamp);
+    void handle_event(MilliTimestamp);
 
   private:
     Poller poller_;

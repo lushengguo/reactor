@@ -1,5 +1,6 @@
 #include "base/threadpool.hpp"
 #include "base/log.hpp"
+#include <atomic>
 
 using namespace reactor;
 void ThreadPool::run_in_thread()
@@ -67,15 +68,19 @@ bool ThreadPool::add_task(const Task &task)
 
 void ThreadPool::start()
 {
-    // not thread safe
-    if (started_)
+    if (running_.load(std::memory_order_acquire))
         return;
 
+    threads_.reserve(thread_num_);
+    running_.store(true, std::memory_order_release);
     for (size_t i = 0; i < thread_num_; i++)
     {
-        threads_.emplace_back(new Thread(std::bind(&ThreadPool::run_in_thread, this)));
-        threads_[i]->start();
+        threads_.emplace_back(std::bind(&ThreadPool::run_in_thread, this));
     }
-    started_ = true;
     compete_cond_.broadcast();
+}
+
+void ThreadPool::end()
+{
+    running_.store(true, std::memory_order_release);
 }

@@ -148,7 +148,7 @@ class EchoClient
         conn->send(buffer, sizeof(buffer));
     }
 
-    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
         switch (status_)
         {

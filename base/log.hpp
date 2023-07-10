@@ -108,42 +108,13 @@ inline void set_roll_size(size_t size) { Logger::get().set_maxsize_per_file(size
 inline void set_max_roll_time(size_t size) { Logger::get().set_max_roll(size); }
 
 } // namespace reactor
+#define impl_log_tail fmt::format(" {}-{}", reactor::Basename(__FILE__), __LINE__)
 
-#define log_trace(...)                                                                                                 \
-    reactor::Logger::get().append(LogLevel::Trace, reactor::va_list_to_string(__VA_ARGS__)                             \
-                                                       .append(" ")                                                    \
-                                                       .append(reactor::Basename(__FILE__))                            \
-                                                       .append("-")                                                    \
-                                                       .append(std::to_string(__LINE__)))
-#define log_debug(...)                                                                                                 \
-    reactor::Logger::get().append(LogLevel::Debug, reactor::va_list_to_string(__VA_ARGS__)                             \
-                                                       .append(" ")                                                    \
-                                                       .append(reactor::Basename(__FILE__))                            \
-                                                       .append("-")                                                    \
-                                                       .append(std::to_string(__LINE__)))
-#define log_warn(...)                                                                                                  \
-    reactor::Logger::get().append(LogLevel::Warn, reactor::va_list_to_string(__VA_ARGS__)                              \
-                                                      .append(" ")                                                     \
-                                                      .append(reactor::Basename(__FILE__))                             \
-                                                      .append("-")                                                     \
-                                                      .append(std::to_string(__LINE__)))
-#define log_info(...)                                                                                                  \
-    reactor::Logger::get().append(LogLevel::Info, reactor::va_list_to_string(__VA_ARGS__)                              \
-                                                      .append(" ")                                                     \
-                                                      .append(reactor::Basename(__FILE__))                             \
-                                                      .append("-")                                                     \
-                                                      .append(std::to_string(__LINE__)))
-#define log_error(...)                                                                                                 \
-    reactor::Logger::get().append(LogLevel::Error, reactor::va_list_to_string(__VA_ARGS__)                             \
-                                                       .append(" ")                                                    \
-                                                       .append(reactor::Basename(__FILE__))                            \
-                                                       .append("-")                                                    \
-                                                       .append(std::to_string(__LINE__)))
-#define log_fatal(...)                                                                                                 \
-    reactor::Logger::get().append(LogLevel::Fatal, reactor::va_list_to_string(__VA_ARGS__)                             \
-                                                       .append(" ")                                                    \
-                                                       .append(reactor::Basename(__FILE__))                            \
-                                                       .append("-")                                                    \
-                                                       .append(std::to_string(__LINE__)))
+#define log_trace(...) reactor::Logger::get().append(LogLevel::Trace, fmt::format(__VA_ARGS__).append(impl_log_tail))
+#define log_debug(...) reactor::Logger::get().append(LogLevel::Debug, fmt::format(__VA_ARGS__).append(impl_log_tail))
+#define log_warn(...) reactor::Logger::get().append(LogLevel::Warn, fmt::format(__VA_ARGS__).append(impl_log_tail))
+#define log_info(...) reactor::Logger::get().append(LogLevel::Info, fmt::format(__VA_ARGS__).append(impl_log_tail))
+#define log_error(...) reactor::Logger::get().append(LogLevel::Error, fmt::format(__VA_ARGS__).append(impl_log_tail))
+#define log_fatal(...) reactor::Logger::get().append(LogLevel::Fatal, fmt::format(__VA_ARGS__).append(impl_log_tail))
 
 #endif

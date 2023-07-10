@@ -1,5 +1,6 @@
 #include "base/timestamp.hpp"
-
+#include <chrono>
+#include <fmt/format.h>
 namespace reactor
 {
 std::string fmt_timestamp(time_t t)
@@ -13,17 +14,13 @@ std::string fmt_timestamp(time_t t)
     return st;
 }
 
-time_t reverse_fmt_timestamp(const char *tstring)
+std::string readable_current_time()
 {
-    if (!tstring || tstring[0] == '\0')
-        return 0;
-
-    struct tm *tmp_time = (struct tm *)malloc(sizeof(struct tm));
-    strptime(tstring, "%Y-%m-%d %H:%M:%S", tmp_time);
-    time_t t = mktime(tmp_time);
-    free(tmp_time);
-    return t - 16 * 60 * 60;
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+    microseconds %= 1000'000;
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    return fmt_timestamp(time).append(fmt::format(".{:06}", microseconds.count()));
 }
-
-std::string readable_current_time() { return fmt_timestamp(time(nullptr)); }
 } // namespace reactor

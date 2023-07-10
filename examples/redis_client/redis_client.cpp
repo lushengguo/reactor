@@ -40,7 +40,7 @@ class RedisClient : RedisProtocol
         conn_ = conn;
     }
 
-    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
         log_trace("on message callback");
         std::string response;

@@ -5,20 +5,19 @@
 #include <sys/time.h>
 namespace reactor
 {
-typedef time_t MicroTimeStamp;
+typedef time_t MilliTimestamp;
 typedef time_t Timestamp;
 
 // time
 std::string fmt_timestamp(time_t t);
-time_t reverse_fmt_timestamp(const char *tstring);
 std::string readable_current_time();
 
-inline MicroTimeStamp micro_timestamp()
+inline MilliTimestamp get_milli_timestamp()
 {
     struct timeval tv;
     ::gettimeofday(&tv, nullptr);
-    MicroTimeStamp seconds = tv.tv_sec;
-    return seconds * 1000000 + tv.tv_usec;
+    MilliTimestamp seconds = tv.tv_sec;
+    return seconds * 1000 + tv.tv_usec / 1000;
 }
 } // namespace reactor
 

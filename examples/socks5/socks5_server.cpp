@@ -163,7 +163,7 @@ class Socks5Server
   public:
     Socks5Server(EventLoop &loop) : loop_(loop), prev_readable_len_(0) {}
 
-    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MicroTimeStamp receive_timestamp)
+    void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
         if (handlePeerShutdown(conn, buffer))
             return;

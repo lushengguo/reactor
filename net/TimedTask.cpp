@@ -10,41 +10,43 @@ namespace reactor
 
 TimedTaskManager::TimedTaskManager(EventLoop *loop) : loop_(loop) {}
 
-TimedTaskManager::TimerId TimedTaskManager::run_at(const TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
+int TimedTaskManager::run_at(const TimerTaskCallback &cb, MilliTimestamp milli_timestamp_since_epoch)
 {
-    MicroTimeStamp now = micro_timestamp();
+    MilliTimestamp now = get_milli_timestamp();
 
-    if (abs_mtime < now)
+    if (milli_timestamp_since_epoch < now)
     {
         return -1;
     }
-    else if (abs_mtime == now)
+    else if (milli_timestamp_since_epoch == now)
     {
         loop_->run_in_work_thread(cb);
         return -1;
     }
     else
     {
-        return run_after(cb, abs_mtime - now);
+        return run_after(cb, milli_timestamp_since_epoch - now);
     }
 }
 
-TimedTaskManager::TimerId TimedTaskManager::run_after(const TimerTaskCallback &cb, MicroTimeStamp after)
+int TimedTaskManager::run_after(const TimerTaskCallback &cb, MilliTimestamp after)
 {
-    TimerId id = create_TimerId();
+    int id = create_TimerId();
     loop_->run_in_loop_thread(std::bind(&TimedTaskManager::create_timer_event, this, id, cb, 0, after));
     return id;
 }
 
-TimedTaskManager::TimerId TimedTaskManager::run_every(const TimerTaskCallback &cb, MicroTimeStamp after,
-                                                      MicroTimeStamp period)
+int TimedTaskManager::run_every(const TimerTaskCallback &cb, MilliTimestamp after, MilliTimestamp period)
 {
-    TimerId id = create_TimerId();
+    int id = create_TimerId();
+    if (after == 0)
+        loop_->run_in_loop_thread(cb);
+
     loop_->run_in_loop_thread(std::bind(&TimedTaskManager::create_timer_event, this, id, cb, period, after));
     return id;
 }
 
-void TimedTaskManager::cancel(TimedTaskManager::TimerId id)
+void TimedTaskManager::cancel(int id)
 {
     loop_->assert_in_loop_thread();
 
@@ -56,25 +58,24 @@ void TimedTaskManager::cancel(TimedTaskManager::TimerId id)
     close(id);
 }
 
-TimedTaskManager::TimerId TimedTaskManager::create_TimerId() const
+int TimedTaskManager::create_TimerId() const
 {
     int id = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
     assert(id > 0);
     return id;
 }
 
-TimedTaskManager::TimerId TimedTaskManager::create_timer_event(TimerId id, const TimerTaskCallback &cb,
-                                                               MicroTimeStamp period, MicroTimeStamp after)
+int TimedTaskManager::create_timer_event(int id, const TimerTaskCallback &cb, MilliTimestamp period,
+                                         MilliTimestamp after)
 {
     loop_->assert_in_loop_thread();
 
     itimerspec ispec;
     ispec.it_interval.tv_sec = period / 1000;
-    ispec.it_interval.tv_nsec = (period % 1000) * 1000000;
+    ispec.it_interval.tv_nsec = (period % 1000) * 1000'000;
     ispec.it_value.tv_sec = after / 1000;
-    ispec.it_value.tv_nsec = (after % 1000) * 1000000;
-    log_trace("new timer event will be called after %ld.%09lds, period=%ld.%09lds", ispec.it_value.tv_sec,
-              ispec.it_value.tv_nsec, ispec.it_interval.tv_sec, ispec.it_interval.tv_nsec);
+    ispec.it_value.tv_nsec = (after % 1000) * 1000'000;
+    log_trace("new timer event will be called after {}ms, period={}ms", after, period);
 
     if (timerfd_settime(id, 0, &ispec, nullptr) == -1)
     {
@@ -82,18 +83,18 @@ TimedTaskManager::TimerId TimedTaskManager::create_timer_event(TimerId id, const
     }
 
     timer_map_[id] = {period != 0, cb};
-    loop_->new_monitor_object(static_cast<TimerId>(id));
+    loop_->new_monitor_object(static_cast<int>(id));
 
     return id;
 }
 
-bool TimedTaskManager::periodical(TimerId id) const
+bool TimedTaskManager::periodical(int id) const
 {
     loop_->assert_in_loop_thread();
     return timer_map_.at(id).periodical_;
 }
 
-void TimedTaskManager::handle_event(TimerId id, int event)
+void TimedTaskManager::handle_event(int id, int event)
 {
     loop_->assert_in_loop_thread();
 

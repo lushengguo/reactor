@@ -13,7 +13,7 @@ Poller::Poller()
     assert(epoll_fd_ > 0);
 }
 
-MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
+MilliTimestamp Poller::epoll(MilliTimestamp timeout)
 {
     if (events_.size() < event_map_.size())
     {
@@ -21,7 +21,7 @@ MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
     }
 
     if (event_map_.empty())
-        return micro_timestamp();
+        return get_milli_timestamp();
 
     int r = ::epoll_wait(epoll_fd_, events_.data(), event_map_.size(), timeout);
     if (r < 0)
@@ -33,7 +33,7 @@ MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
         events_[r].events = NOEVENT;
     }
 
-    return micro_timestamp();
+    return get_milli_timestamp();
 }
 
 void Poller::remove_monitor_object(int fd)
