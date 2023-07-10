@@ -5,7 +5,7 @@
 
 using namespace reactor;
 
-int main()
+TEST(reactor, async_task)
 {
     EventLoop loop;
     static MicroTimeStamp now = micro_timestamp();

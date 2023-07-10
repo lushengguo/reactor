@@ -10,7 +10,7 @@ namespace reactor
 {
 class EventLoop;
 
-class AsyncTaskManager : private noncopyable
+class TimedTaskManager : private noncopyable
 {
   public:
     typedef std::function<void()> TimerTaskCallback;
@@ -22,14 +22,14 @@ class AsyncTaskManager : private noncopyable
     } TimerTaskRecord;
     typedef std::unordered_map<TimerId, TimerTaskRecord> TimerMap;
 
-    AsyncTaskManager(EventLoop *loop);
+    TimedTaskManager(EventLoop *loop);
 
     TimerId run_at(const TimerTaskCallback &, MicroTimeStamp abs_mtime);
     TimerId run_after(const TimerTaskCallback &, MicroTimeStamp after);
     TimerId run_every(const TimerTaskCallback &, MicroTimeStamp after, MicroTimeStamp period);
     void cancel(TimerId);
 
-    bool contain(TimerId id) const { return timerMap_.count(id); }
+    bool contain(TimerId id) const { return timer_map_.count(id); }
 
     void handle_event(TimerId, int event);
 
@@ -39,7 +39,7 @@ class AsyncTaskManager : private noncopyable
     TimerId create_timer_event(TimerId id, const TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after);
 
   private:
-    TimerMap timerMap_;
+    TimerMap timer_map_;
     EventLoop *loop_;
 };
 } // namespace reactor

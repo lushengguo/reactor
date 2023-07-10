@@ -5,7 +5,7 @@
 
 namespace reactor
 {
-EventLoop::EventLoop() : tqueue_(new AsyncTaskManager(this)), self_(pthread_self()), looping_(false) { pool_.start(); }
+EventLoop::EventLoop() : tqueue_(new TimedTaskManager(this)), self_(pthread_self()), looping_(false) { pool_.start(); }
 
 void EventLoop::handle_event(MicroTimeStamp receive_time)
 {

@@ -6,7 +6,7 @@
 #include "base/threadpool.hpp"
 #include "base/timestamp.hpp"
 #include "net/Epoller.hpp"
-#include "net/AsyncTask.hpp"
+#include "net/TimedTask.hpp"
 #include <functional>
 #include <map>
 #include <memory>
@@ -28,8 +28,8 @@ class EventLoop : private noncopyable
     typedef std::function<void()> Task;
     typedef std::map<int, TcpConnectionPtr> ConnectionMap;
     typedef std::deque<Task> TaskQueue;
-    using TimerId = AsyncTaskManager::TimerId;
-    using TimerTaskCallback = AsyncTaskManager::TimerTaskCallback;
+    using TimerId = TimedTaskManager::TimerId;
+    using TimerTaskCallback = TimedTaskManager::TimerTaskCallback;
 
     EventLoop();
 
@@ -65,7 +65,7 @@ class EventLoop : private noncopyable
 
   private:
     Poller poller_;
-    AsyncTaskManager *tqueue_;
+    TimedTaskManager *tqueue_;
     pthread_t self_;
     bool looping_;
     ThreadPool pool_;
