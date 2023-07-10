@@ -7,8 +7,8 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include <sys/epoll.h>
 
-struct epoll_event;
 namespace reactor
 {
 class EventLoop;
@@ -18,7 +18,7 @@ class Poller : private noncopyable
   public:
     typedef std::vector<epoll_event> epoll_events;
     typedef std::unordered_map<int, int> FdEventMap;
-    Poller(EventLoop *loop);
+    Poller();
 
     MicroTimeStamp epoll(MicroTimeStamp timeout);
     const epoll_events &active_events() const { return events_; }
@@ -31,9 +31,8 @@ class Poller : private noncopyable
     constexpr static int NOEVENT = 0;
 
     int epoll_fd_;
-    EventLoop *loop_;
     epoll_events events_;
-    FdEventMap feMap_;
+    FdEventMap event_map_;
 };
 
 } // namespace reactor

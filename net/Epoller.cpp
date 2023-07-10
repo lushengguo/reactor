@@ -3,12 +3,11 @@
 #include "net/EventLoop.hpp"
 #include <assert.h>
 #include <errno.h>
-#include <sys/epoll.h>
 
 namespace reactor
 {
 
-Poller::Poller(EventLoop *loop) : loop_(loop)
+Poller::Poller()
 {
     epoll_fd_ = ::epoll_create1(0);
     assert(epoll_fd_ > 0);
@@ -16,17 +15,16 @@ Poller::Poller(EventLoop *loop) : loop_(loop)
 
 MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
 {
-    if (events_.size() < feMap_.size())
+    if (events_.size() < event_map_.size())
     {
-        events_.resize(feMap_.size());
+        events_.resize(event_map_.size());
     }
 
-    if (feMap_.empty())
+    if (event_map_.empty())
         return micro_timestamp();
 
-    int r = ::epoll_wait(epoll_fd_, events_.data(), feMap_.size(), timeout);
-    MicroTimeStamp now = micro_timestamp();
-    if (r == -1)
+    int r = ::epoll_wait(epoll_fd_, events_.data(), event_map_.size(), timeout);
+    if (r <= 0)
     {
         log_error("epoll error:%s", strerror(errno));
     }
@@ -35,16 +33,16 @@ MicroTimeStamp Poller::epoll(MicroTimeStamp timeout)
         events_[r].events = NOEVENT;
     }
 
-    return now;
+    return micro_timestamp();
 }
 
 void Poller::remove_monitor_object(int fd)
 {
-    assert(feMap_.count(fd) == 1);
+    assert(event_map_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
     e.events = NOEVENT;
-    feMap_.erase(fd);
+    event_map_.erase(fd);
     int r = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, &e);
     if (r != 0)
     {
@@ -54,11 +52,11 @@ void Poller::remove_monitor_object(int fd)
 
 void Poller::new_monitor_object(int fd, int ievent)
 {
-    assert(feMap_.count(fd) == 0);
+    assert(event_map_.count(fd) == 0);
     epoll_event e;
     e.data.fd = fd;
     e.events = ievent;
-    feMap_[fd] = ievent;
+    event_map_[fd] = ievent;
     int r = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &e);
     if (r != 0)
     {
@@ -68,7 +66,7 @@ void Poller::new_monitor_object(int fd, int ievent)
 
 void Poller::modify_monitor_object(int fd, int ievent)
 {
-    assert(feMap_.count(fd) == 1);
+    assert(event_map_.count(fd) == 1);
     epoll_event e;
     e.data.fd = fd;
     e.events = ievent;

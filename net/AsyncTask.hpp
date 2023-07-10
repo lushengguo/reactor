@@ -1,6 +1,6 @@
 #pragma once
-#ifndef REACTOR_TIMERQUEUE_HPP
-#define REACTOR_TIMERQUEUE_HPP
+#ifndef REACTOR_ASYNC_TASK_HPP
+#define REACTOR_ASYNC_TASK_HPP
 
 #include "base/noncopyable.hpp"
 #include "base/timestamp.hpp"
@@ -10,7 +10,7 @@ namespace reactor
 {
 class EventLoop;
 
-class TimerQueue : private noncopyable
+class AsyncTaskManager : private noncopyable
 {
   public:
     typedef std::function<void()> TimerTaskCallback;
@@ -22,7 +22,7 @@ class TimerQueue : private noncopyable
     } TimerTaskRecord;
     typedef std::unordered_map<TimerId, TimerTaskRecord> TimerMap;
 
-    TimerQueue(EventLoop *loop);
+    AsyncTaskManager(EventLoop *loop);
 
     TimerId run_at(const TimerTaskCallback &, MicroTimeStamp abs_mtime);
     TimerId run_after(const TimerTaskCallback &, MicroTimeStamp after);

@@ -5,7 +5,8 @@
 #include "base/noncopyable.hpp"
 #include "base/threadpool.hpp"
 #include "base/timestamp.hpp"
-#include "net/TimerQueue.hpp"
+#include "net/Epoller.hpp"
+#include "net/AsyncTask.hpp"
 #include <functional>
 #include <map>
 #include <memory>
@@ -15,7 +16,6 @@
 namespace reactor
 {
 
-class Poller;
 class TcpConnection;
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
 typedef std::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
@@ -28,8 +28,8 @@ class EventLoop : private noncopyable
     typedef std::function<void()> Task;
     typedef std::map<int, TcpConnectionPtr> ConnectionMap;
     typedef std::deque<Task> TaskQueue;
-    using TimerId = TimerQueue::TimerId;
-    using TimerTaskCallback = TimerQueue::TimerTaskCallback;
+    using TimerId = AsyncTaskManager::TimerId;
+    using TimerTaskCallback = AsyncTaskManager::TimerTaskCallback;
 
     EventLoop();
 
@@ -64,8 +64,8 @@ class EventLoop : private noncopyable
     void handle_event(MicroTimeStamp);
 
   private:
-    Poller *poller_;
-    TimerQueue *tqueue_;
+    Poller poller_;
+    AsyncTaskManager *tqueue_;
     pthread_t self_;
     bool looping_;
     ThreadPool pool_;

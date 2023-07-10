@@ -1,4 +1,4 @@
-#include "net/TimerQueue.hpp"
+#include "net/AsyncTask.hpp"
 #include "net/EventLoop.hpp"
 #include <assert.h>
 #include <sys/epoll.h>
@@ -8,9 +8,9 @@
 namespace reactor
 {
 
-TimerQueue::TimerQueue(EventLoop *loop) : loop_(loop) {}
+AsyncTaskManager::AsyncTaskManager(EventLoop *loop) : loop_(loop) {}
 
-TimerQueue::TimerId TimerQueue::run_at(const TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
+AsyncTaskManager::TimerId AsyncTaskManager::run_at(const TimerTaskCallback &cb, MicroTimeStamp abs_mtime)
 {
     MicroTimeStamp now = micro_timestamp();
 
@@ -29,21 +29,22 @@ TimerQueue::TimerId TimerQueue::run_at(const TimerTaskCallback &cb, MicroTimeSta
     }
 }
 
-TimerQueue::TimerId TimerQueue::run_after(const TimerTaskCallback &cb, MicroTimeStamp after)
+AsyncTaskManager::TimerId AsyncTaskManager::run_after(const TimerTaskCallback &cb, MicroTimeStamp after)
 {
     TimerId id = create_TimerId();
-    loop_->run_in_loop_thread(std::bind(&TimerQueue::create_timer_event, this, id, cb, 0, after));
+    loop_->run_in_loop_thread(std::bind(&AsyncTaskManager::create_timer_event, this, id, cb, 0, after));
     return id;
 }
 
-TimerQueue::TimerId TimerQueue::run_every(const TimerTaskCallback &cb, MicroTimeStamp after, MicroTimeStamp period)
+AsyncTaskManager::TimerId AsyncTaskManager::run_every(const TimerTaskCallback &cb, MicroTimeStamp after,
+                                                      MicroTimeStamp period)
 {
     TimerId id = create_TimerId();
-    loop_->run_in_loop_thread(std::bind(&TimerQueue::create_timer_event, this, id, cb, period, after));
+    loop_->run_in_loop_thread(std::bind(&AsyncTaskManager::create_timer_event, this, id, cb, period, after));
     return id;
 }
 
-void TimerQueue::cancel(TimerQueue::TimerId id)
+void AsyncTaskManager::cancel(AsyncTaskManager::TimerId id)
 {
     loop_->assert_in_loop_thread();
 
@@ -55,14 +56,15 @@ void TimerQueue::cancel(TimerQueue::TimerId id)
     close(id);
 }
 
-TimerQueue::TimerId TimerQueue::create_TimerId() const
+AsyncTaskManager::TimerId AsyncTaskManager::create_TimerId() const
 {
     int id = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
     assert(id > 0);
     return id;
 }
 
-TimerQueue::TimerId TimerQueue::create_timer_event(TimerId id, const TimerTaskCallback &cb, MicroTimeStamp period, MicroTimeStamp after)
+AsyncTaskManager::TimerId AsyncTaskManager::create_timer_event(TimerId id, const TimerTaskCallback &cb,
+                                                               MicroTimeStamp period, MicroTimeStamp after)
 {
     loop_->assert_in_loop_thread();
 
@@ -85,13 +87,13 @@ TimerQueue::TimerId TimerQueue::create_timer_event(TimerId id, const TimerTaskCa
     return id;
 }
 
-bool TimerQueue::periodical(TimerId id) const
+bool AsyncTaskManager::periodical(TimerId id) const
 {
     loop_->assert_in_loop_thread();
     return timerMap_.at(id).periodical_;
 }
 
-void TimerQueue::handle_event(TimerId id, int event)
+void AsyncTaskManager::handle_event(TimerId id, int event)
 {
     loop_->assert_in_loop_thread();
 
@@ -108,6 +110,6 @@ void TimerQueue::handle_event(TimerId id, int event)
     TimerTaskCallback cb = timerMap_.at(id).cb;
     loop_->run_in_work_thread(std::move(cb));
     if (!periodical(id))
-        loop_->run_in_loop_thread(std::bind(&TimerQueue::cancel, this, id));
+        loop_->run_in_loop_thread(std::bind(&AsyncTaskManager::cancel, this, id));
 }
 } // namespace reactor
