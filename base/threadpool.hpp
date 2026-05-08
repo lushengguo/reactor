@@ -39,7 +39,7 @@ class ThreadPool
     Mutex task_queue_mutex_;
     Mutex cond_mutex_;
     Condition compete_cond_;
-    std::vector<std::jthread> threads_;
+    std::vector<std::thread> threads_;
     std::deque<Task> tasks_;
 };
 } // namespace reactor

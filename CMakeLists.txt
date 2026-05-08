@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
-project(reactor)
+cmake_minimum_required(VERSION 3.25)
+project(reactor VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_FLAGS
     " -std=c++2a -g -Wall -Wextra -Werror -Wno-unused-parameter  -Wshadow ")

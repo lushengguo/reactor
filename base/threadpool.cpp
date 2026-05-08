@@ -5,9 +5,13 @@
 using namespace reactor;
 void ThreadPool::run_in_thread()
 {
-    while (true)
+    while (running_.load(std::memory_order_acquire))
     {
         compete_cond_.wait();
+        if (!running_.load(std::memory_order_acquire))
+        {
+            break;
+        }
         task_queue_mutex_.lock();
         Task task;
         if (!tasks_.empty())
@@ -82,5 +86,14 @@ void ThreadPool::start()
 
 void ThreadPool::end()
 {
-    running_.store(true, std::memory_order_release);
+    running_.store(false, std::memory_order_release);
+    compete_cond_.broadcast();
+    for (auto &thread : threads_)
+    {
+        if (thread.joinable())
+        {
+            thread.join();
+        }
+    }
+    threads_.clear();
 }

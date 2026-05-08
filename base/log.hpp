@@ -26,7 +26,7 @@ template <> struct
 fmt::formatter<LogLevel> : fmt::formatter<std::string_view>
 {
     // 将枚举值转换为字符串
-    template <typename FormatContext> auto format(LogLevel c, FormatContext &ctx)
+    template <typename FormatContext> auto format(LogLevel c, FormatContext &ctx) const
     {
         std::string_view name;
         switch (c)

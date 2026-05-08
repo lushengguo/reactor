@@ -14,7 +14,7 @@ class Thread
   public:
     typedef std::function<void(void)> Func;
 
-    Thread(const Func &func) : func_(func), started_(false), tid_(-1) {}
+    Thread(const Func &func) : func_(func), started_(false), tid_() {}
 
     void detach();
     Thread &start();

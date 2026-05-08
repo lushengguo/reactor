@@ -138,8 +138,8 @@ std::string Basename(std::string fullpath)
     if (fullpath.empty())
         return "";
 
-    char buffer[fullpath.size() + 1];
-    strcpy(buffer, fullpath.c_str());
-    return ::basename(buffer);
+    std::vector<char> buffer(fullpath.begin(), fullpath.end());
+    buffer.push_back('\0');
+    return ::basename(buffer.data());
 }
 } // namespace reactor
