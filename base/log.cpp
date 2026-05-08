@@ -42,7 +42,10 @@ Logger::~Logger()
         close(fd_);
 }
 
-void Logger::set_max_roll(size_t roll) { max_roll_ = roll; }
+void Logger::set_max_roll(size_t roll)
+{
+    max_roll_ = roll;
+}
 
 void Logger::set_log_directory(const char *dir)
 {
@@ -109,21 +112,22 @@ void Logger::check_roll()
         std::string newname = filename_ + "_" + std::to_string(now);
         if (rename(filename_.c_str(), newname.c_str()) != 0)
         {
-            fprintf(stderr, "rename logfile %s -> %s failed ; msg: %s\n", filename_.c_str(), newname.c_str(), strerror(errno));
+            fprintf(stderr, "rename logfile %s -> %s failed ; msg: %s\n", filename_.c_str(), newname.c_str(),
+                    strerror(errno));
             return;
         }
 
-        //重新指定fd_指向的文件
+        // 重新指定fd_指向的文件
         set_log_directory(dirname_.c_str());
 
-        //检查本地log文件是否过多，多的话删除至最多max_roll_time_个
+        // 检查本地log文件是否过多，多的话删除至最多max_roll_time_个
         remove_roll_out_files();
     }
 }
 
 void Logger::remove_roll_out_files() const
 {
-    //删除多出的日志文件
+    // 删除多出的日志文件
     FileMap rfiles = rolling_files();
     if (rfiles.size() < max_roll_)
         return;
@@ -141,8 +145,8 @@ void Logger::remove_roll_out_files() const
     }
 }
 
-//统计log目录下所有滚动文件
-//返回值 键-滚动时间戳 值-文件绝对路径
+// 统计log目录下所有滚动文件
+// 返回值 键-滚动时间戳 值-文件绝对路径
 Logger::FileMap Logger::rolling_files() const
 {
     FileMap rfiles;

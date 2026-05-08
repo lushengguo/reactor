@@ -16,7 +16,10 @@ void Buffer::retrive(std::size_t n)
         rindex_ += n;
     }
 }
-void Buffer::retrive_all() { rindex_ = windex_ = 0; }
+void Buffer::retrive_all()
+{
+    rindex_ = windex_ = 0;
+}
 
 std::string_view Buffer::string(size_t n) const
 {
@@ -24,9 +27,15 @@ std::string_view Buffer::string(size_t n) const
     return std::string_view(buffer_.data() + rindex_, byte);
 }
 
-void Buffer::append(std::string_view s) { append(s.data(), s.size()); }
+void Buffer::append(std::string_view s)
+{
+    append(s.data(), s.size());
+}
 
-void Buffer::append(const Buffer &buffer) { append(buffer.read_all_as_string()); }
+void Buffer::append(const Buffer &buffer)
+{
+    append(buffer.read_all_as_string());
+}
 
 void Buffer::swap(Buffer &rhs)
 {
@@ -41,11 +50,11 @@ void Buffer::make_space_for_write(size_t n)
     {
         return;
     }
-    else if (buffer_.size() - readable_bytes_len() >= n) //挪一下就能有地方
+    else if (buffer_.size() - readable_bytes_len() >= n) // 挪一下就能有地方
     {
         std::copy(buffer_.begin() + rindex_, buffer_.begin() + windex_, buffer_.begin());
     }
-    else //申请新空间 预留两倍n
+    else // 申请新空间 预留两倍n
     {
         std::vector<char> tmp(readable_bytes_len() + 2 * n);
         std::copy(buffer_.begin() + rindex_, buffer_.begin() + windex_, tmp.begin());

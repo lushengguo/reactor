@@ -9,7 +9,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
-//长连接 要求客户端关闭连接时能检测到
+// 长连接 要求客户端关闭连接时能检测到
 using namespace reactor;
 using namespace socks5;
 using namespace std::placeholders;
@@ -137,7 +137,7 @@ class EchoClient
     }
 
   public:
-    //连接建立后主动由client发起数据通讯
+    // 连接建立后主动由client发起数据通讯
     void onConnection(TcpConnectionPtr conn)
     {
         char buffer[3];

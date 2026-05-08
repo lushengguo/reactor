@@ -5,8 +5,12 @@
 
 namespace WebServer
 {
-Parser::ParseCode Parser::parse_request(std::string_view line) {}
-Parser::ParseCode Parser::parse_header(std::string_view line) {}
+Parser::ParseCode Parser::parse_request(std::string_view line)
+{
+}
+Parser::ParseCode Parser::parse_header(std::string_view line)
+{
+}
 
 Parser::ParseCode Parser::parse_body(std::string_view line, Parser::Request &request)
 {

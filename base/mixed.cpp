@@ -33,7 +33,8 @@ bool is_numeric_string(std::string_view s)
     if (s.empty())
         return false;
 
-    return static_cast<size_t>(std::count_if(s.begin(), s.end(), [](unsigned char ch) { return std::isdigit(ch); })) == s.size();
+    return static_cast<size_t>(std::count_if(s.begin(), s.end(), [](unsigned char ch) { return std::isdigit(ch); })) ==
+           s.size();
 }
 
 size_t calc_file_size(const char *path)

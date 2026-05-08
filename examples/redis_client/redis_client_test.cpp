@@ -21,7 +21,9 @@ namespace reactor
 class RedisClient : RedisProtocol
 {
   public:
-    RedisClient(EventLoop *loop, std::string_view ip) : client_(loop, INetAddr(ip, 6379), "RedisClient") {}
+    RedisClient(EventLoop *loop, std::string_view ip) : client_(loop, INetAddr(ip, 6379), "RedisClient")
+    {
+    }
 
     void send(std::string_view cmd)
     {
@@ -36,10 +38,22 @@ class RedisClient : RedisProtocol
         client_.start();
     }
 
-    void wait() { cond_.wait(); }
-    void signal() { cond_.signal(); }
-    std::string response() { return response_; }
-    bool connection_established() { return conn_ != nullptr; }
+    void wait()
+    {
+        cond_.wait();
+    }
+    void signal()
+    {
+        cond_.signal();
+    }
+    std::string response()
+    {
+        return response_;
+    }
+    bool connection_established()
+    {
+        return conn_ != nullptr;
+    }
 
   private:
     void onConnection(TcpConnectionPtr conn)

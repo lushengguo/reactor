@@ -25,4 +25,7 @@ bool test_replace_all()
     return true;
 }
 
-TEST(string, replace_all) { EXPECT_TRUE(test_replace_all()); }
+TEST(string, replace_all)
+{
+    EXPECT_TRUE(test_replace_all());
+}

@@ -23,9 +23,14 @@ Socket::Socket(Socket &&rhs)
 }
 
 // private func for accept
-Socket::Socket(int fd, INetAddr &&addr) : self_endpoint_(std::move(addr)), backlog_(default_backlog_), fd_(fd) {}
+Socket::Socket(int fd, INetAddr &&addr) : self_endpoint_(std::move(addr)), backlog_(default_backlog_), fd_(fd)
+{
+}
 
-Socket::~Socket() { close(); }
+Socket::~Socket()
+{
+    close();
+}
 
 Socket::Socket(int backlog) : fd_(-1)
 {
@@ -111,16 +116,26 @@ bool Socket::connect(const INetAddr &addr) const
     int r = ::connect(fd_, (sockaddr *)&server, sizeof server);
     if (r == -1)
     {
-        log_error("connect ip=%s port=%d failed: %s", addr.readable_ip().data(), self_endpoint_.hostport(), strerror(errno));
+        log_error("connect ip=%s port=%d failed: %s", addr.readable_ip().data(), self_endpoint_.hostport(),
+                  strerror(errno));
     }
     return r == 0;
 }
 
-int Socket::read(char *buffer, size_t max) { return ::read(fd_, buffer, max); }
+int Socket::read(char *buffer, size_t max)
+{
+    return ::read(fd_, buffer, max);
+}
 
-int Socket::write(const char *buffer, size_t send_len) { return ::write(fd_, buffer, send_len); }
+int Socket::write(const char *buffer, size_t send_len)
+{
+    return ::write(fd_, buffer, send_len);
+}
 
-int Socket::shutdown() { return ::shutdown(fd_, SHUT_WR); }
+int Socket::shutdown()
+{
+    return ::shutdown(fd_, SHUT_WR);
+}
 
 void Socket::close()
 {

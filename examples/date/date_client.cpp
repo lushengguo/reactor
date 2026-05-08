@@ -21,7 +21,7 @@ class DateClient
 
 }; // namespace reactor
 
-//长连接 要求客户端关闭连接时能检测到
+// 长连接 要求客户端关闭连接时能检测到
 using namespace reactor;
 using namespace std::placeholders;
 int main(int argc, char **argv)

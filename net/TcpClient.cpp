@@ -11,11 +11,13 @@ bool TcpClient::start()
 
     if (sock_.connect(server_endpoint_))
     {
-        log_info("connect server ip=%s port=%d success", server_endpoint_.readable_ip().data(), server_endpoint_.hostport());
+        log_info("connect server ip=%s port=%d success", server_endpoint_.readable_ip().data(),
+                 server_endpoint_.hostport());
     }
     else
     {
-        log_error("connect server ip=%s port=%d failed:%s", server_endpoint_.readable_ip().data(), server_endpoint_.hostport(), strerror(errno));
+        log_error("connect server ip=%s port=%d failed:%s", server_endpoint_.readable_ip().data(),
+                  server_endpoint_.hostport(), strerror(errno));
         return false;
     }
 

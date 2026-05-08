@@ -10,7 +10,7 @@ Protocal::Cmd Protocal::server_parse_message(const std::string &raw_message, std
     std::smatch regex_result;
     if (std::regex_match(raw_message, regex_result, without_message))
     {
-        //这些指令是不需要输入message变量的
+        // 这些指令是不需要输入message变量的
         std::string_view cmd(regex_result[1].str());
         if (cmd == "help" || cmd == "h")
             return kRequestHelp;

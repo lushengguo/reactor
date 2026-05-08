@@ -9,7 +9,7 @@ namespace reactor
 class EchoClient
 {
   public:
-    //连接建立后主动由client发起数据通讯
+    // 连接建立后主动由client发起数据通讯
     void onConnection(TcpConnectionPtr conn)
     {
         std::cout << "please input message >> " << std::flush;
@@ -33,7 +33,7 @@ class EchoClient
 
 }; // namespace reactor
 
-//长连接 要求客户端关闭连接时能检测到
+// 长连接 要求客户端关闭连接时能检测到
 using namespace reactor;
 using namespace std::placeholders;
 int main(int argc, char **argv)

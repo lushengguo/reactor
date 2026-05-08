@@ -3,7 +3,9 @@
 
 namespace reactor
 {
-TimeWheel::TimeWheel() : timeout_(std::numeric_limits<size_t>::max()) {}
+TimeWheel::TimeWheel() : timeout_(std::numeric_limits<size_t>::max())
+{
+}
 
 void TimeWheel::insert(FileDescripter fd)
 {
@@ -59,5 +61,8 @@ std::set<TimeWheel::FileDescripter> TimeWheel::update()
     return r;
 }
 
-void TimeWheel::set_timeout(time_t t) { timeout_ = t; }
+void TimeWheel::set_timeout(time_t t)
+{
+    timeout_ = t;
+}
 } // namespace reactor

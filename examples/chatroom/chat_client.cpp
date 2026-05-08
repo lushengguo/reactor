@@ -12,7 +12,9 @@ namespace reactor
 class ChatClient
 {
   public:
-    ChatClient(EventLoop *loop, INetAddr addr) : client(loop, addr, "ChatClient") {}
+    ChatClient(EventLoop *loop, INetAddr addr) : client(loop, addr, "ChatClient")
+    {
+    }
 
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
@@ -20,7 +22,10 @@ class ChatClient
         buffer.retrive_all();
     }
 
-    void onConnection(TcpConnectionPtr conn) { conn_ = conn; }
+    void onConnection(TcpConnectionPtr conn)
+    {
+        conn_ = conn;
+    }
 
     void start()
     {
@@ -29,9 +34,15 @@ class ChatClient
         client.start();
     }
 
-    void send(std::string_view m) { conn_->send(m); }
+    void send(std::string_view m)
+    {
+        conn_->send(m);
+    }
 
-    bool connection_build() { return conn_ != nullptr; }
+    bool connection_build()
+    {
+        return conn_ != nullptr;
+    }
 
   private:
     TcpConnectionPtr conn_;

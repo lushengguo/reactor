@@ -18,7 +18,9 @@ namespace reactor
 class RedisClient : RedisProtocol
 {
   public:
-    RedisClient(EventLoop *loop, std::string_view ip) : client(loop, INetAddr(ip, 6379), "RedisClient") {}
+    RedisClient(EventLoop *loop, std::string_view ip) : client(loop, INetAddr(ip, 6379), "RedisClient")
+    {
+    }
 
     void send(std::string_view cmd)
     {

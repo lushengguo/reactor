@@ -8,7 +8,9 @@
 namespace reactor
 {
 
-TimedTaskManager::TimedTaskManager(EventLoop *loop) : loop_(loop) {}
+TimedTaskManager::TimedTaskManager(EventLoop *loop) : loop_(loop)
+{
+}
 
 int TimedTaskManager::run_at(const TimerTaskCallback &cb, MilliTimestamp milli_timestamp_since_epoch)
 {

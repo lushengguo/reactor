@@ -17,7 +17,7 @@ class DateServer
 
 }; // namespace reactor
 
-//短连接 要求连接建立后发送日期信息然后主动关掉连接
+// 短连接 要求连接建立后发送日期信息然后主动关掉连接
 using namespace reactor;
 using namespace std::placeholders;
 int main(int argc, char **argv)

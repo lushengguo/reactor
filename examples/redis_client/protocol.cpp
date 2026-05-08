@@ -19,7 +19,7 @@ size_t RedisProtocol::parse_response(const std::string &frame, std::string &resu
         // log_debug("receive raw response:%s", frame_debug.c_str());
     }
 
-    //找到一个ack的起始位置
+    // 找到一个ack的起始位置
     ResponseType type;
     int header_index = find_header(frame, type);
     if (header_index == -1)

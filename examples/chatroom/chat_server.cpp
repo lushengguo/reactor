@@ -57,7 +57,9 @@ class ChatServer : noncopyable, Protocal
     typedef std::map<std::string, std::set<UserId>> ChatRooms;
     typedef std::map<UserId, UserStatus> OnLineUsers;
 
-    ChatServer(EventLoop *loop, const INetAddr &addr) : server_(loop, addr, "ChatServer") {}
+    ChatServer(EventLoop *loop, const INetAddr &addr) : server_(loop, addr, "ChatServer")
+    {
+    }
 
     // show message
     std::string chatroom_member(std::string_view room)
@@ -100,7 +102,10 @@ class ChatServer : noncopyable, Protocal
         return true;
     }
 
-    void new_user(UserId id, TcpConnectionPtr conn) { users_.insert(std::make_pair(id, UserStatus{"", "", kNotSetUserName, conn})); }
+    void new_user(UserId id, TcpConnectionPtr conn)
+    {
+        users_.insert(std::make_pair(id, UserStatus{"", "", kNotSetUserName, conn}));
+    }
 
     bool new_chatroom(const std::string &name)
     {
@@ -110,7 +115,10 @@ class ChatServer : noncopyable, Protocal
         return true;
     }
 
-    bool is_chatroom_name(std::string_view name) { return rooms_.count(name.data()); }
+    bool is_chatroom_name(std::string_view name)
+    {
+        return rooms_.count(name.data());
+    }
 
     // return val>0 if is user name
     UserId is_user_name(std::string_view name)
@@ -141,7 +149,10 @@ class ChatServer : noncopyable, Protocal
         return false;
     }
 
-    void quit(UserId id) { users_.at(id).talking_to_ = ""; }
+    void quit(UserId id)
+    {
+        users_.at(id).talking_to_ = "";
+    }
 
     void collect_user(UserId id)
     {
@@ -238,12 +249,13 @@ class ChatServer : noncopyable, Protocal
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {
         std::string message;
-        bool r = true; //默认操作成功
+        bool r = true; // 默认操作成功
         UserId id = conn->fd();
         Cmd cmd = server_parse_message(std::string(buffer.read_all_as_string()), message);
         buffer.retrive_all();
 
-        log_debug("user name[%s] input cmd[%s],message[%s]", users_.at(id).name_.c_str(), cmd_to_string(cmd).c_str(), message.c_str());
+        log_debug("user name[%s] input cmd[%s],message[%s]", users_.at(id).name_.c_str(), cmd_to_string(cmd).c_str(),
+                  message.c_str());
 
         if (cmd != kSetName && users_.at(id).name_.empty())
         {
@@ -301,7 +313,9 @@ class ChatServer : noncopyable, Protocal
             conn->send(failed);
     }
 
-    void onDisconnect() {}
+    void onDisconnect()
+    {
+    }
 
     void start()
     {

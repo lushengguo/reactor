@@ -14,9 +14,15 @@ TcpConnection::TcpConnection(EventLoop *loop, Socket &&socket)
 {
 }
 
-TcpConnection::~TcpConnection() { log_info("close connection with ip=%s,port=%d", sock_.readable_ip().data(), sock_.hostport()); }
+TcpConnection::~TcpConnection()
+{
+    log_info("close connection with ip=%s,port=%d", sock_.readable_ip().data(), sock_.hostport());
+}
 
-void TcpConnection::send(std::string_view m) { send(m.data(), m.size()); }
+void TcpConnection::send(std::string_view m)
+{
+    send(m.data(), m.size());
+}
 
 void TcpConnection::send(const char *buf, size_t len)
 {
@@ -24,8 +30,8 @@ void TcpConnection::send(const char *buf, size_t len)
         return;
 
     // IO都放到loop线程做 因为IO只是把数据拷贝到内核
-    //内存带宽远远大于网络带宽 这对网络数据收发性能无影响
-    //而且解决了读写同步问题
+    // 内存带宽远远大于网络带宽 这对网络数据收发性能无影响
+    // 而且解决了读写同步问题
     if (loop_->in_loop_thread())
     {
         if (write_buffer_.readable_bytes_len() == 0)
@@ -55,14 +61,17 @@ void TcpConnection::send(const char *buf, size_t len)
     else
     {
         log_debug("not in loop thread, send failed, save data to write buffer");
-        //存储到write_buffer_里 由wr回调负责全部发送出去
+        // 存储到write_buffer_里 由wr回调负责全部发送出去
         listen_on_write_event();
         MutexLockGuard lock(wr_buffer_mutex_);
         write_buffer_.append(buf, len);
     }
 }
 
-void TcpConnection::remove_self_in_loop() { loop_->remove_monitor_object(shared_from_this()); }
+void TcpConnection::remove_self_in_loop()
+{
+    loop_->remove_monitor_object(shared_from_this());
+}
 
 void TcpConnection::shutdown()
 {
@@ -132,8 +141,8 @@ void TcpConnection::handle_read(MilliTimestamp receive_time)
     }
 }
 
-//用户调用Send函数一定是在loop线程 handle_write也在loop线程 所以不用考虑🔒
-//不管是send还是handle_write 如果写不成功就把剩下的数据存起来
+// 用户调用Send函数一定是在loop线程 handle_write也在loop线程 所以不用考虑🔒
+// 不管是send还是handle_write 如果写不成功就把剩下的数据存起来
 void TcpConnection::handle_write()
 {
     assert(writing());
@@ -144,8 +153,8 @@ void TcpConnection::handle_write()
         return;
     }
 
-    //主线程负责写暂存未发送出去的内容 send函数只是负责发一次
-    //全部发完由回调处理
+    // 主线程负责写暂存未发送出去的内容 send函数只是负责发一次
+    // 全部发完由回调处理
     log_debug("write buffer non-empty,send in write event handler");
     log_debug("data in write buffer:[%s]", write_buffer_.read_all_as_string().data());
     int r = sock_.write(write_buffer_.readable_data(), write_buffer_.readable_bytes_len());
@@ -167,7 +176,7 @@ void TcpConnection::handle_write()
     }
 }
 
-//对方半关闭连接后调用这个函数 应该把要发的数据发完本端再关闭连接
+// 对方半关闭连接后调用这个函数 应该把要发的数据发完本端再关闭连接
 void TcpConnection::handle_close()
 {
     if (write_buffer_.readable_bytes_len() == 0)

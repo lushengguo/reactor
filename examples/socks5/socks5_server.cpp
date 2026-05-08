@@ -6,7 +6,7 @@
 #include "net/TcpServer.hpp"
 #include "socks_protocol.hpp"
 
-//长连接 要求客户端关闭连接时能检测到
+// 长连接 要求客户端关闭连接时能检测到
 using namespace reactor;
 using namespace std::placeholders;
 using namespace socks5;
@@ -161,7 +161,9 @@ class Socks5Server
     size_t prev_readable_len_;
 
   public:
-    Socks5Server(EventLoop &loop) : loop_(loop), prev_readable_len_(0) {}
+    Socks5Server(EventLoop &loop) : loop_(loop), prev_readable_len_(0)
+    {
+    }
 
     void onMessage(TcpConnectionPtr conn, Buffer &buffer, MilliTimestamp receive_timestamp)
     {

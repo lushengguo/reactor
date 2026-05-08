@@ -6,7 +6,10 @@ namespace reactor
 class ThreadFuncCaller
 {
   public:
-    void call(Thread *thread) { thread->run_func(); }
+    void call(Thread *thread)
+    {
+        thread->run_func();
+    }
 };
 } // namespace reactor
 
@@ -35,7 +38,10 @@ Thread &Thread::start()
     return *this;
 }
 
-void Thread::detach() { assert(pthread_detach(tid_) == 0); }
+void Thread::detach()
+{
+    assert(pthread_detach(tid_) == 0);
+}
 
 void Thread::join()
 {
